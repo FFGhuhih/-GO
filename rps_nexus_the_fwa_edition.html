@@ -1,0 +1,3174 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RPS NEXUS｜星界猜拳對決 · The FWA Edition</title>
+
+  <!-- Google Fonts: Noto Sans TC, Plus Jakarta Sans & Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@600;700;800&family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet" />
+
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Three.js 3D Engine (用於競技場動態能量核心背景) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans TC"', '"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['"Space Grotesk"', '"Noto Sans TC"', 'sans-serif'],
+          },
+          colors: {
+            cyber: {
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              900: '#0c4a6e',
+            },
+            neon: {
+              purple: '#8b5cf6',
+              pink: '#ec4899',
+              amber: '#f59e0b',
+              emerald: '#10b981'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    :root {
+      --bg-primary: #f4f7fb;
+      --text-primary: #0f172a;
+    }
+    html.dark {
+      --bg-primary: #050814;
+      --text-primary: #f8fafc;
+    }
+
+    body {
+      font-family: 'Noto Sans TC', 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      overflow-x: hidden;
+      transition: background-color 0.35s ease, color 0.35s ease;
+    }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* FWA 玻璃擬態導覽列 */
+    .fwa-glass {
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    }
+    html.dark .fwa-glass {
+      background: rgba(8, 13, 28, 0.85);
+      border-bottom: 1px solid rgba(51, 65, 85, 0.55);
+    }
+
+    /* FWA 流動極光漸層背景 */
+    @keyframes auroraFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .fwa-aurora {
+      background: linear-gradient(-45deg, #0284c7, #4f46e5, #9333ea, #ec4899, #f59e0b);
+      background-size: 320% 320%;
+      animation: auroraFlow 12s ease infinite;
+    }
+
+    /* FWA 3D 懸浮卡牌質感 */
+    .fwa-card {
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+    }
+    .fwa-card:hover {
+      transform: translateY(-7px) scale(1.015);
+      box-shadow: 0 22px 44px -12px rgba(79, 70, 229, 0.28);
+    }
+    html.dark .fwa-card:hover {
+      box-shadow: 0 22px 44px -12px rgba(56, 189, 248, 0.25);
+    }
+
+    /* 稀有度邊框與光澤 */
+    .rarity-SSR {
+      border: 2px solid #f59e0b;
+      box-shadow: 0 0 24px rgba(245, 158, 11, 0.28);
+    }
+    .rarity-SR {
+      border: 2px solid #a855f7;
+      box-shadow: 0 0 18px rgba(168, 85, 247, 0.22);
+    }
+    .rarity-R {
+      border: 2px solid #0ea5e9;
+    }
+    .rarity-N {
+      border: 1.5px solid rgba(148, 163, 184, 0.45);
+    }
+
+    /* 猜拳碰撞動畫 */
+    @keyframes clashShake {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      25% { transform: scale(1.16) rotate(-8deg); }
+      50% { transform: scale(1.22) rotate(8deg); }
+      75% { transform: scale(1.1) rotate(-4deg); }
+    }
+    .animate-clash {
+      animation: clashShake 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes fwaFadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fwa-view {
+      animation: fwaFadeUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes bounceDot {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+    .typing-dot { animation: bounceDot 1.3s infinite ease-in-out both; }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+  </style>
+</head>
+<body class="antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- ==================== 頂部 FWA 懸浮玻璃導覽列 ==================== -->
+  <header class="fwa-glass sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 md:h-20 gap-2 sm:gap-4">
+        <!-- 品牌 Logo -->
+        <button onclick="switchTab('arena')" class="flex items-center gap-3 text-left group focus:outline-none shrink-0">
+          <div class="w-10 h-10 md:w-11 md:h-11 rounded-2xl fwa-aurora flex items-center justify-center text-white shadow-lg group-hover:rotate-12 transition-transform">
+            <i class="fa-solid fa-hand-fist text-lg md:text-xl"></i>
+          </div>
+          <div>
+            <span class="block text-base sm:text-lg md:text-xl font-black tracking-tight bg-gradient-to-r from-sky-600 via-indigo-600 to-amber-500 dark:from-sky-400 dark:via-purple-400 dark:to-amber-300 bg-clip-text text-transparent">
+              RPS NEXUS｜星界猜拳對決
+            </span>
+            <span class="hidden sm:block text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              THE FWA EDITION · 策略卡牌 × 優先裝備 × 5勝制
+            </span>
+          </div>
+        </button>
+
+        <!-- 桌面版導覽分頁 -->
+        <nav class="hidden xl:flex items-center bg-slate-100/90 dark:bg-slate-800/80 p-1.5 rounded-2xl border border-slate-200/70 dark:border-slate-700/70 gap-1">
+          <button data-nav="arena" onclick="switchTab('arena')" class="nav-btn px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-swords"></i> 對戰競技場
+          </button>
+          <button data-nav="gacha" onclick="switchTab('gacha')" class="nav-btn px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-wand-magic-sparkles text-purple-500"></i> 抽卡祭壇
+          </button>
+          <button data-nav="shop" onclick="switchTab('shop')" class="nav-btn px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-store text-amber-500"></i> 道具裝備店
+          </button>
+          <button data-nav="codex" onclick="switchTab('codex')" class="nav-btn px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-book-sparkles text-emerald-500"></i> 規則與圖鑑目錄
+          </button>
+          <!-- 管理面板分頁（僅管理員以上權限顯示） -->
+          <button id="nav-admin-btn" data-nav="admin" onclick="switchTab('admin')" class="hidden nav-btn px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+            <i class="fa-solid fa-shield-halved"></i> 管理面板
+          </button>
+        </nav>
+
+        <!-- 右側資產顯示 + 音效 + 黑暗模式 + 會員登入 -->
+        <div class="flex items-center gap-2">
+          <!-- 金幣與星晶顯示 -->
+          <div class="hidden md:flex items-center gap-2.5 bg-slate-100 dark:bg-slate-800/90 px-3.5 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs font-black">
+            <span class="flex items-center gap-1 text-amber-600 dark:text-amber-400" title="對戰金幣（用於購買裝備道具）">
+              <i class="fa-solid fa-coins"></i>
+              <span id="header-coins">1,500</span>
+            </span>
+            <span class="text-slate-300 dark:text-slate-600">|</span>
+            <span class="flex items-center gap-1 text-purple-600 dark:text-purple-400" title="星界晶石（用於抽卡祭壇）">
+              <i class="fa-solid fa-gem"></i>
+              <span id="header-gems">1,000</span>
+            </span>
+          </div>
+
+          <!-- 音效切換鈕 -->
+          <button
+            onclick="toggleSound()"
+            title="切換戰鬥音效"
+            aria-label="切換戰鬥音效"
+            class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-sky-300 transition shrink-0"
+          >
+            <i id="sound-icon" class="fa-solid fa-volume-high text-sm"></i>
+          </button>
+
+          <!-- 黑暗模式切換鈕 -->
+          <button
+            onclick="toggleDarkMode()"
+            title="切換深淺色主題"
+            aria-label="切換深淺色主題"
+            class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-amber-300 transition shrink-0"
+          >
+            <i id="dark-mode-icon" class="fa-solid fa-moon text-sm"></i>
+          </button>
+
+          <!-- 會員登入 / 個人資料狀態按鈕 -->
+          <div id="header-auth-area" class="shrink-0"></div>
+        </div>
+      </div>
+
+      <!-- 手機與平板水平導覽列 + 貨幣列 -->
+      <div class="flex xl:hidden items-center justify-between gap-2 pb-3 overflow-x-auto no-scrollbar">
+        <div class="flex items-center gap-1.5">
+          <button data-nav="arena" onclick="switchTab('arena')" class="nav-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+            <i class="fa-solid fa-swords"></i> 競技場
+          </button>
+          <button data-nav="gacha" onclick="switchTab('gacha')" class="nav-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+            <i class="fa-solid fa-wand-magic-sparkles text-purple-500"></i> 抽卡
+          </button>
+          <button data-nav="shop" onclick="switchTab('shop')" class="nav-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+            <i class="fa-solid fa-store text-amber-500"></i> 道具店
+          </button>
+          <button data-nav="codex" onclick="switchTab('codex')" class="nav-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+            <i class="fa-solid fa-book-sparkles text-emerald-500"></i> 規則與圖鑑
+          </button>
+          <button id="mobile-nav-admin-btn" data-nav="admin" onclick="switchTab('admin')" class="hidden nav-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+            <i class="fa-solid fa-shield-halved"></i> 管理面板
+          </button>
+        </div>
+
+        <div class="flex md:hidden items-center gap-2 shrink-0 text-xs font-black bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-xl">
+          <span class="text-amber-600 dark:text-amber-400"><i class="fa-solid fa-coins mr-0.5"></i><span id="mobile-coins">1,500</span></span>
+          <span class="text-purple-600 dark:text-purple-400"><i class="fa-solid fa-gem mr-0.5"></i><span id="mobile-gems">1,000</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== 主內容區域 ==================== -->
+  <main class="min-h-screen pb-24">
+
+    <!-- ========================================================= -->
+    <!-- VIEW 1: 對戰競技場 (BATTLE ARENA)                         -->
+    <!-- ========================================================= -->
+    <section id="view-arena" class="animate-fwa-view pt-6 pb-12">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+
+        <!-- 頂部：選擇不同等級的機器人對手 -->
+        <div class="bg-white dark:bg-slate-900/90 rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-100 dark:border-slate-800">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+              <span class="text-[11px] font-black uppercase tracking-widest text-indigo-600 dark:text-sky-400">CHOOSE YOUR OPPONENT</span>
+              <h2 class="text-lg sm:text-xl font-black text-slate-900 dark:text-white">選擇挑戰機器人等級（任一方取得 5 勝，對決立即結束！）</h2>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="switchTab('codex')" class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-xs font-bold text-slate-700 dark:text-slate-200 transition">
+                <i class="fa-solid fa-scroll mr-1"></i> 查看核心規則
+              </button>
+              <button onclick="startNewMatch()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:brightness-110 text-white text-xs font-black shadow-sm transition">
+                <i class="fa-solid fa-rotate mr-1"></i> 重新開局
+              </button>
+            </div>
+          </div>
+
+          <div id="bot-tier-selector" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5"></div>
+        </div>
+
+        <!-- 中央：FWA 3D 能量對決舞台 + 裝備欄位 + 出拳區 -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+          <!-- 左側 8 欄：對決主舞台與手牌區 -->
+          <div class="lg:col-span-8 space-y-6">
+
+            <!-- 主對決舞台卡片 -->
+            <div class="relative rounded-3xl overflow-hidden shadow-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-950 text-white">
+              <!-- Three.js 3D 動態粒子能量背景 -->
+              <canvas id="arena-3d-bg" class="absolute inset-0 w-full h-full opacity-55 pointer-events-none"></canvas>
+              <div class="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-slate-950/65 to-slate-950/90 pointer-events-none"></div>
+
+              <div class="relative z-10 p-5 sm:p-8">
+                <!-- 回合數與 5 勝計分板 -->
+                <div class="flex items-center justify-between gap-2 pb-6 border-b border-white/10">
+                  <!-- 玩家狀態 -->
+                  <div class="flex-1">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="px-2.5 py-0.5 rounded-full bg-sky-500/25 border border-sky-400/40 text-sky-300 text-xs font-black">挑戰者（你）</span>
+                      <span id="player-streak-badge" class="hidden px-2 py-0.5 rounded-full bg-amber-500/25 text-amber-300 text-[11px] font-black">連勝 x0</span>
+                      <span id="player-lose-streak-badge" class="hidden px-2 py-0.5 rounded-full bg-rose-500/25 text-rose-300 text-[11px] font-black">連敗 x0</span>
+                    </div>
+                    <div class="mt-2 flex items-center gap-1.5" id="player-win-pips"></div>
+                    <div class="text-xs text-slate-300 font-bold mt-1">目前勝場：<span id="player-wins-text" class="text-sky-400 text-lg font-black font-display">0</span> / 5 勝</div>
+                  </div>
+
+                  <!-- 中央回合指示器 -->
+                  <div class="text-center px-3 shrink-0">
+                    <div class="px-4 py-1.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20">
+                      <div class="text-[10px] font-black uppercase tracking-widest text-amber-300">ROUND</div>
+                      <div id="arena-round-number" class="text-2xl sm:text-3xl font-black font-display leading-none mt-0.5">1</div>
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-bold mt-1.5">裝備優先結算</div>
+                  </div>
+
+                  <!-- 機器人狀態 -->
+                  <div class="flex-1 text-right">
+                    <div class="flex flex-wrap items-center justify-end gap-1.5">
+                      <span id="bot-lose-streak-badge" class="hidden px-2 py-0.5 rounded-full bg-slate-500/30 text-slate-300 text-[11px] font-black">連敗 x0</span>
+                      <span id="bot-streak-badge" class="hidden px-2 py-0.5 rounded-full bg-rose-500/25 text-rose-300 text-[11px] font-black">連勝 x0</span>
+                      <span id="arena-bot-name-badge" class="px-2.5 py-0.5 rounded-full bg-rose-500/25 border border-rose-400/40 text-rose-300 text-xs font-black">Lv.1 街頭見習機</span>
+                    </div>
+                    <div class="mt-2 flex items-center justify-end gap-1.5" id="bot-win-pips"></div>
+                    <div class="text-xs text-slate-300 font-bold mt-1">對手勝場：<span id="bot-wins-text" class="text-rose-400 text-lg font-black font-display">0</span> / 5 勝</div>
+                  </div>
+                </div>
+
+                <!-- 裝備優先結算狀態橫幅 -->
+                <div id="priority-equip-banner" class="mt-5 p-3.5 rounded-2xl bg-indigo-500/20 border border-indigo-400/35 backdrop-blur-md flex items-center gap-3 text-xs sm:text-sm text-indigo-100">
+                  <div class="w-8 h-8 rounded-xl bg-indigo-500/40 flex items-center justify-center text-amber-300 shrink-0">
+                    <i class="fa-solid fa-bolt"></i>
+                  </div>
+                  <div id="priority-equip-text" class="font-bold leading-relaxed">
+                    【裝備技能優先結算】請選擇出拳或搭配一張手牌發動攻擊！
+                  </div>
+                </div>
+
+                <!-- 中央出拳對撞展示區 -->
+                <div class="py-8 sm:py-10 grid grid-cols-3 items-center text-center gap-2">
+                  <!-- 我方出拳 -->
+                  <div class="flex flex-col items-center">
+                    <div id="player-move-orb" class="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-gradient-to-br from-sky-500/30 to-indigo-600/30 border-2 border-sky-400/50 flex items-center justify-center text-5xl sm:text-6xl shadow-lg">
+                      ❔
+                    </div>
+                    <span id="player-move-label" class="mt-2.5 text-xs sm:text-sm font-black text-sky-300">等待出拳</span>
+                  </div>
+
+                  <!-- VS 與單局結果徽章 -->
+                  <div class="flex flex-col items-center justify-center">
+                    <div id="round-outcome-badge" class="px-4 py-2 rounded-2xl bg-white/10 border border-white/20 text-xs sm:text-base font-black text-amber-300 tracking-wider">
+                      VS
+                    </div>
+                    <p id="round-outcome-sub" class="text-[11px] text-slate-300 mt-2 max-w-[175px] leading-snug">
+                      雙方出拳相同即平手（不加分且連敗歸零）
+                    </p>
+                  </div>
+
+                  <!-- 敵方出拳 -->
+                  <div class="flex flex-col items-center">
+                    <div id="bot-move-orb" class="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-gradient-to-br from-rose-500/30 to-purple-600/30 border-2 border-rose-400/50 flex items-center justify-center text-5xl sm:text-6xl shadow-lg">
+                      🤖
+                    </div>
+                    <span id="bot-move-label" class="mt-2.5 text-xs sm:text-sm font-black text-rose-300">機器人演算中</span>
+                  </div>
+                </div>
+
+                <!-- 終局結算覆蓋層（當任一方取得 5 勝時立即顯示） -->
+                <div id="match-over-panel" class="hidden mb-6 p-6 rounded-3xl bg-gradient-to-r from-amber-500/25 via-purple-600/30 to-sky-500/25 border-2 border-amber-400/60 backdrop-blur-md text-center animate-fwa-view">
+                  <div id="match-over-icon" class="text-4xl mb-2">🏆</div>
+                  <h3 id="match-over-title" class="text-2xl sm:text-3xl font-black text-amber-300">恭喜取得 5 勝！對決立即結束！</h3>
+                  <p id="match-over-reward" class="text-sm text-white/90 font-bold mt-1.5 mb-5">獲得獎勵：+300 對戰金幣、+150 星界晶石</p>
+                  <button onclick="startNewMatch()" class="px-7 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:brightness-110 text-slate-950 font-black text-sm shadow-xl transition">
+                    <i class="fa-solid fa-play mr-1.5"></i> 立即開始下一場 5 勝對決
+                  </button>
+                </div>
+
+                <!-- 玩家三大出拳按鈕（剪刀 / 石頭 / 布） -->
+                <div id="rps-action-buttons" class="grid grid-cols-3 gap-3 sm:gap-5">
+                  <button
+                    onclick="playRPSRound('scissors')"
+                    class="fwa-card group py-4 sm:py-5 px-3 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black shadow-xl border border-white/25 flex flex-col items-center justify-center gap-1.5"
+                  >
+                    <span class="text-3xl sm:text-4xl group-hover:scale-110 transition-transform">✌️</span>
+                    <span class="text-sm sm:text-base">出剪刀</span>
+                  </button>
+
+                  <button
+                    onclick="playRPSRound('rock')"
+                    class="fwa-card group py-4 sm:py-5 px-3 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-black shadow-xl border border-white/25 flex flex-col items-center justify-center gap-1.5"
+                  >
+                    <span class="text-3xl sm:text-4xl group-hover:scale-110 transition-transform">✊</span>
+                    <span class="text-sm sm:text-base">出石頭</span>
+                  </button>
+
+                  <button
+                    onclick="playRPSRound('paper')"
+                    class="fwa-card group py-4 sm:py-5 px-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black shadow-xl border border-white/25 flex flex-col items-center justify-center gap-1.5"
+                  >
+                    <span class="text-3xl sm:text-4xl group-hover:scale-110 transition-transform">🖐️</span>
+                    <span class="text-sm sm:text-base">出布</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 策略手牌區（出拳前可點擊選擇 1 張卡牌強化本回合） -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-100 dark:border-slate-800">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                <div>
+                  <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-purple-500"></i> 策略手牌區（點擊選擇 1 張卡牌配合出拳）
+                  </h3>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    已選取卡牌：<span id="selected-card-indicator" class="font-black text-indigo-600 dark:text-sky-400">無（純粹出拳）</span>
+                  </p>
+                </div>
+                <button onclick="drawBonusHandCard()" class="px-3.5 py-2 rounded-xl bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-600 hover:text-white text-purple-700 dark:text-purple-300 text-xs font-black transition">
+                  <i class="fa-solid fa-plus mr-1"></i> 補充手牌（花費 60 金幣）
+                </button>
+              </div>
+
+              <div id="arena-hand-cards" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5"></div>
+            </div>
+          </div>
+
+          <!-- 右側 4 欄：優先結算裝備槽 + 即時戰鬥紀錄 -->
+          <div class="lg:col-span-4 space-y-6">
+            <!-- 優先結算裝備欄位（最多裝備 2 件） -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-100 dark:border-slate-800">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <i class="fa-solid fa-shield-halved text-amber-500"></i> 優先結算裝備欄 (最多 2 件)
+                </h3>
+                <button onclick="switchTab('shop')" class="text-xs font-bold text-indigo-600 dark:text-sky-400 hover:underline">購買裝備 →</button>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
+                核心規範：<strong>裝備技能優先結算；幸運手套不會跳過第 1 回合</strong>。點擊下方已擁有裝備可自由穿戴或卸下！
+              </p>
+
+              <div id="arena-equipped-slots" class="space-y-2.5 mb-4"></div>
+
+              <div class="pt-3 border-t border-slate-100 dark:border-slate-800">
+                <div class="text-xs font-black text-slate-500 dark:text-slate-400 mb-2">我的裝備背包（點擊穿戴/卸下）：</div>
+                <div id="arena-owned-equip-list" class="flex flex-wrap gap-2"></div>
+              </div>
+            </div>
+
+            <!-- 即時戰鬥結算紀錄（Combat Log） -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-100 dark:border-slate-800">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <i class="fa-solid fa-terminal text-emerald-500"></i> 優先結算與戰鬥紀錄
+                </h3>
+                <span class="text-[11px] font-bold text-slate-400">即時演算</span>
+              </div>
+              <div id="arena-combat-log" class="space-y-2.5 max-h-[360px] overflow-y-auto pr-1 text-xs leading-relaxed"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 2: 抽卡祭壇 (GACHA SUMMON ALTAR)                     -->
+    <!-- ========================================================= -->
+    <section id="view-gacha" class="hidden animate-fwa-view pt-8 pb-12">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- FWA 抽卡橫幅 -->
+        <div class="fwa-aurora rounded-3xl p-7 sm:p-10 text-white shadow-2xl mb-8 relative overflow-hidden">
+          <div class="absolute inset-0 bg-slate-950/35 pointer-events-none"></div>
+          <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
+            <div class="max-w-2xl">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-black mb-3">
+                <i class="fa-solid fa-sparkles text-amber-300"></i> STARLIGHT CARD SUMMON · SSR 機率 UP
+              </span>
+              <h1 class="text-3xl sm:text-5xl font-black tracking-tight mb-3">星界策略卡牌抽卡祭壇</h1>
+              <p class="text-sm sm:text-base text-white/90 leading-relaxed">
+                消耗星界晶石召喚強力策略卡牌！取得「逆轉乾坤」、「背水一戰」、「鏡像複製」與「平手奪勝」等稀有卡牌，在 5 勝對決中逆轉乾坤！
+              </p>
+              <div class="flex flex-wrap gap-3 mt-4 text-xs font-black">
+                <span class="px-3 py-1 rounded-lg bg-amber-500/30 border border-amber-300/40 text-amber-200">SSR 傳說卡：8%</span>
+                <span class="px-3 py-1 rounded-lg bg-purple-500/30 border border-purple-300/40 text-purple-200">SR 史詩卡：24%</span>
+                <span class="px-3 py-1 rounded-lg bg-sky-500/30 border border-sky-300/40 text-sky-200">R 稀有卡：43%</span>
+                <span class="px-3 py-1 rounded-lg bg-slate-500/30 border border-slate-300/40 text-slate-200">N 普通卡：25%</span>
+              </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row lg:flex-col gap-3 w-full sm:w-auto shrink-0">
+              <button
+                onclick="pullGacha(1)"
+                class="px-7 py-4 rounded-2xl bg-white text-slate-900 hover:bg-sky-50 font-black text-sm sm:text-base shadow-xl transition flex items-center justify-center gap-2"
+              >
+                <i class="fa-solid fa-gem text-purple-600"></i>
+                <span>單次召喚（100 星晶）</span>
+              </button>
+              <button
+                onclick="pullGacha(10)"
+                class="px-7 py-4 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:brightness-110 text-slate-950 font-black text-sm sm:text-base shadow-xl transition flex items-center justify-center gap-2"
+              >
+                <i class="fa-solid fa-crown"></i>
+                <span>十連召喚（900 星晶 · 必出 SR 以上）</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 抽卡結果展示舞台 -->
+        <div id="gacha-result-stage" class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-100 dark:border-slate-800">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-burst text-amber-500"></i> 本次召喚結果展示
+            </h2>
+            <button onclick="switchTab('codex')" class="text-xs sm:text-sm font-bold text-indigo-600 dark:text-sky-400 hover:underline">
+              前往圖鑑目錄查看所有已獲得卡牌 →
+            </button>
+          </div>
+          <div id="gacha-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div class="col-span-full py-12 text-center text-slate-400">
+              <i class="fa-solid fa-wand-sparkles text-4xl mb-3 text-purple-400"></i>
+              <p class="font-bold text-sm">點擊上方「單次召喚」或「十連召喚」抽取你的專屬戰術卡牌！</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 3: 道具與裝備商店 (ITEM & EQUIPMENT SHOP)            -->
+    <!-- ========================================================= -->
+    <section id="view-shop" class="hidden animate-fwa-view pt-8 pb-12">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+          <div>
+            <span class="text-xs font-black uppercase tracking-widest text-amber-500">PRIORITY GEAR & SUPPLY SHOP</span>
+            <h1 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white mt-1">星界道具與優先裝備商店</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              使用對戰獲得的「金幣」購買強力優先裝備（包含「幸運手套」）與補充星界晶石！
+            </p>
+          </div>
+
+          <div class="flex items-center gap-3 bg-white dark:bg-slate-900 px-5 py-3 rounded-2xl shadow-md border border-slate-100 dark:border-slate-800 text-sm font-black">
+            <span class="text-amber-600 dark:text-amber-400"><i class="fa-solid fa-coins mr-1.5"></i>持有金幣：<span id="shop-coins-display">1,500</span></span>
+            <span class="text-slate-300 dark:text-slate-700">|</span>
+            <span class="text-purple-600 dark:text-purple-400"><i class="fa-solid fa-gem mr-1.5"></i>持有星晶：<span id="shop-gems-display">1,000</span></span>
+          </div>
+        </div>
+
+        <!-- 優先裝備區 -->
+        <div class="mb-10">
+          <h2 class="text-xl font-black text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-shield-halved text-indigo-500"></i> 優先結算裝備（永久解鎖，可於競技場自由穿戴）
+          </h2>
+          <div id="shop-equipment-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+
+        <!-- 戰術補給與貨幣兌換區 -->
+        <div>
+          <h2 class="text-xl font-black text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-box-open text-emerald-500"></i> 戰術卡包與星晶補給
+          </h2>
+          <div id="shop-bundles-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 4: 遊戲規則與卡牌道具圖鑑目錄 (RULES & CODEX)        -->
+    <!-- ========================================================= -->
+    <section id="view-codex" class="hidden animate-fwa-view pt-8 pb-12">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+
+        <!-- 遊戲核心規則書 -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-100 dark:border-slate-800">
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-12 h-12 rounded-2xl fwa-aurora text-white flex items-center justify-center text-xl shadow-md">
+              <i class="fa-solid fa-scale-balanced"></i>
+            </div>
+            <div>
+              <span class="text-xs font-black uppercase tracking-widest text-indigo-600 dark:text-sky-400">OFFICIAL RULEBOOK</span>
+              <h1 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">星界猜拳對決・核心規則說明</h1>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700">
+              <div class="text-xs font-black text-sky-600 dark:text-sky-400 mb-1">RULE 01 · 平手判定基準</div>
+              <h3 class="text-base font-black text-slate-900 dark:text-white mb-1.5">雙方出拳相同就是平手</h3>
+              <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                每回合雙方同時亮出剪刀、石頭或布。只要最終雙方出拳相同（包含使用「鏡像複製」卡牌造成的相同出拳），即判定為平手狀態。
+              </p>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700">
+              <div class="text-xs font-black text-emerald-600 dark:text-emerald-400 mb-1">RULE 02 · 一般平手結算</div>
+              <h3 class="text-base font-black text-slate-900 dark:text-white mb-1.5">一般平手雙方不加分，且連敗歸零</h3>
+              <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                若無特殊裝備或卡牌改寫平手結果，則屬於「一般平手」：雙方勝場皆不增加（+0 分），同時雙方的<strong>連敗紀錄立即歸零</strong>！
+              </p>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60">
+              <div class="text-xs font-black text-amber-600 dark:text-amber-400 mb-1">RULE 03 · 優先權與首回合保護</div>
+              <h3 class="text-base font-black text-slate-900 dark:text-white mb-1.5">裝備技能優先結算；幸運手套不會跳過第 1 回合</h3>
+              <p class="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+                所有裝備被動技能均享有<strong>最高優先結算權</strong>（先於一般勝負結算）。特別注意：傳說裝備「幸運手套」雖可在平手時助你奪勝，但<strong>絕對不會跳過第 1 回合</strong>，第 1 回合必定完整進行雙方出拳與正常結算！
+              </p>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/60">
+              <div class="text-xs font-black text-rose-600 dark:text-rose-400 mb-1">RULE 04 · 終局勝利條件</div>
+              <h3 class="text-base font-black text-slate-900 dark:text-white mb-1.5">任一方取得 5 勝，對決立即結束</h3>
+              <p class="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+                採搶 5 勝制！在任何回合結算後，只要玩家或機器人任一方累積達到 <strong>5 勝</strong>，對決立即宣告結束並頒發對應等級的勝利獎勵。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 卡牌與道具圖鑑目錄（查看全部圖鑑 & 目前已獲得） -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-100 dark:border-slate-800">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <span class="text-xs font-black uppercase tracking-widest text-purple-600 dark:text-purple-400">COLLECTION & CATALOG</span>
+              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">卡牌與裝備道具圖鑑目錄</h2>
+              <p id="codex-progress-summary" class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                目前已收集：0 / 16 項全圖鑑
+              </p>
+            </div>
+
+            <!-- 篩選器：全部 / 已獲得 / 未獲得 -->
+            <div class="flex flex-wrap items-center gap-2">
+              <button data-codex-filter="all" onclick="setCodexFilter('all')" class="codex-filter-btn px-4 py-2 rounded-xl text-xs font-black transition">全部圖鑑</button>
+              <button data-codex-filter="owned" onclick="setCodexFilter('owned')" class="codex-filter-btn px-4 py-2 rounded-xl text-xs font-black transition">✅ 目前已獲得</button>
+              <button data-codex-filter="unowned" onclick="setCodexFilter('unowned')" class="codex-filter-btn px-4 py-2 rounded-xl text-xs font-black transition">🔒 尚未獲得</button>
+            </div>
+          </div>
+
+          <!-- 優先裝備圖鑑區塊 -->
+          <div class="mb-10">
+            <h3 class="text-lg font-black text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-shield-halved text-amber-500"></i> 優先結算裝備目錄（共 6 件）
+            </h3>
+            <div id="codex-equipment-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+          </div>
+
+          <!-- 策略卡牌圖鑑區塊 -->
+          <div>
+            <h3 class="text-lg font-black text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-layer-group text-purple-500"></i> 策略行動卡牌目錄（共 10 張）
+            </h3>
+            <div id="codex-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 5: 管理面板・用戶試算表與權限管理 (ADMIN PANEL VIEW)  -->
+    <!-- ========================================================= -->
+    <section id="view-admin" class="hidden animate-fwa-view pt-8 pb-12">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 text-xs font-black mb-2">
+              <i class="fa-solid fa-shield-halved"></i> ROLE-BASED ACCESS CONTROL · 雲端用戶試算表
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">管理面板｜用戶權限試算表與網站瀏覽監控</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Project ID: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-xs font-mono">unique-machine-478619-u4</code> · 管理員以上可查看試算表，開發者以上可即時調整權限階級
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5">
+            <button onclick="adminGrantTestResources()" class="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5">
+              <i class="fa-solid fa-gem"></i> 測試發放 +1,000 金幣與星晶
+            </button>
+            <button onclick="exportUsersCSV()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5">
+              <i class="fa-solid fa-file-csv"></i> 匯出試算表 (CSV)
+            </button>
+          </div>
+        </div>
+
+        <!-- 統計卡片 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-lg">
+            <div class="text-xs font-bold text-slate-400">網站累計瀏覽次數（同步頁尾）</div>
+            <div id="admin-stat-views" class="text-3xl font-black text-sky-600 dark:text-sky-400 mt-2 font-display">1</div>
+            <div class="text-[11px] text-emerald-500 font-bold mt-1"><i class="fa-solid fa-arrow-trend-up mr-1"></i>每次開啟網站自動遞增並同步</div>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-lg">
+            <div class="text-xs font-bold text-slate-400">試算表註冊用戶總數</div>
+            <div id="admin-stat-users" class="text-3xl font-black text-slate-900 dark:text-white mt-2 font-display">0</div>
+            <div class="text-[11px] text-slate-400 font-bold mt-1">含 Email 驗證與 Google / GitHub 登入</div>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-lg">
+            <div class="text-xs font-bold text-slate-400">管理層人員（管理員以上）</div>
+            <div id="admin-stat-staff" class="text-3xl font-black text-amber-500 mt-2 font-display">0</div>
+            <div class="text-[11px] text-slate-400 font-bold mt-1">管理員 / 開發者 / 擁有者</div>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-lg">
+            <div class="text-xs font-bold text-slate-400">您目前的登入權限階級</div>
+            <div id="admin-current-role-badge" class="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-2">未登入</div>
+            <div id="admin-role-permission-hint" class="text-[11px] text-emerald-500 font-bold mt-1">權限狀態</div>
+          </div>
+        </div>
+
+        <!-- 試算表：網站瀏覽次數表 -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden mb-8">
+          <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <h2 class="font-black text-sm sm:text-base text-slate-800 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-table text-sky-600"></i> 網站瀏覽次數試算表（Sheet 2：Site_Views_Tracker）
+            </h2>
+            <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">● 已與網站最底下頁尾即時同步</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+              <thead>
+                <tr class="bg-slate-100/70 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-black border-b border-slate-200 dark:border-slate-700">
+                  <th class="py-3 px-4">指標名稱</th>
+                  <th class="py-3 px-4">累計瀏覽次數</th>
+                  <th class="py-3 px-4">最近存取時間</th>
+                  <th class="py-3 px-4">同步狀態</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="py-3.5 px-4 font-bold">網站瀏覽次數 (Total Page Views)</td>
+                  <td id="sheet-view-count-cell" class="py-3.5 px-4 font-black text-sky-600 dark:text-sky-400 text-base">1</td>
+                  <td id="sheet-view-updated-cell" class="py-3.5 px-4 text-slate-500 font-mono text-xs">-</td>
+                  <td class="py-3.5 px-4"><span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-bold">即時同步至頁尾</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 試算表：用戶管理與權限調整 -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+          <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <h2 class="font-black text-sm sm:text-base text-slate-800 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-users-gear text-amber-500"></i> 用戶資料庫與權限試算表（Sheet 1：Users_Permissions）
+            </h2>
+            <span class="text-xs text-slate-500 dark:text-slate-400">
+              權限階級：<strong>一般</strong> &lt; <strong>管理員</strong>（可查看面板） &lt; <strong>開發者</strong>（可隨意調整權限） &lt; <strong>擁有者</strong>
+            </span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+              <thead>
+                <tr class="bg-slate-100/70 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-black border-b border-slate-200 dark:border-slate-700">
+                  <th class="py-3.5 px-4">編號</th>
+                  <th class="py-3.5 px-4">Email 信箱</th>
+                  <th class="py-3.5 px-4">姓</th>
+                  <th class="py-3.5 px-4">名</th>
+                  <th class="py-3.5 px-4">性別</th>
+                  <th class="py-3.5 px-4">登入方式</th>
+                  <th class="py-3.5 px-4">信箱驗證</th>
+                  <th class="py-3.5 px-4">權限階級（開發者以上可調整）</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-tbody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== 頁尾 Footer（同步顯示網站瀏覽次數） ==================== -->
+  <footer class="bg-slate-950 text-slate-300 pt-12 pb-24 border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-8 border-b border-slate-800">
+        <div>
+          <div class="flex items-center gap-2.5 text-white font-black text-xl mb-2">
+            <i class="fa-solid fa-hand-fist text-amber-400"></i>
+            <span>RPS NEXUS｜星界猜拳對決</span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-400 max-w-xl">
+            結合 The FWA 互動美學、策略卡牌召喚、優先裝備結算（幸運手套絕不跳過第 1 回合）、四階智能機器人對決與 Gemini AI 戰術軍師。
+          </p>
+        </div>
+
+        <div class="flex flex-wrap gap-2 text-xs font-bold">
+          <button onclick="switchTab('arena')" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-indigo-600 text-slate-200 transition">對戰競技場</button>
+          <button onclick="switchTab('gacha')" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-purple-600 text-slate-200 transition">抽卡祭壇</button>
+          <button onclick="switchTab('shop')" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-amber-600 text-slate-200 transition">道具裝備店</button>
+          <button onclick="switchTab('codex')" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-emerald-600 text-slate-200 transition">規則與圖鑑目錄</button>
+        </div>
+      </div>
+
+      <!-- 最底下同步顯示網站瀏覽次數 -->
+      <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+        <div>© 2026 RPS NEXUS 星界猜拳對決 · The FWA Edition</div>
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 font-bold">
+          <i class="fa-solid fa-eye text-sky-400"></i>
+          <span>網站累計瀏覽次數：</span>
+          <span id="footer-view-counter" class="text-amber-400 font-black text-sm font-display">1</span>
+          <span>次</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== 登入 / 註冊 / Email 6位數驗證彈窗 ==================== -->
+  <div id="auth-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-md overflow-y-auto">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-fwa-view my-auto">
+      <div class="fwa-aurora p-6 text-white flex items-center justify-between relative">
+        <div class="relative z-10">
+          <span class="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2.5 py-0.5 rounded-full">PLAYER ACCOUNT PORTAL</span>
+          <h2 id="auth-modal-title" class="text-2xl font-black mt-1">登入星界猜拳對決</h2>
+        </div>
+        <button onclick="closeAuthModal()" class="relative z-10 w-9 h-9 rounded-full bg-black/25 hover:bg-black/40 text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-6 sm:p-8 max-h-[80vh] overflow-y-auto">
+        <!-- 分頁切換 -->
+        <div id="auth-tabs-bar" class="grid grid-cols-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl mb-6">
+          <button id="tab-btn-login" onclick="switchAuthMode('login')" class="py-2 rounded-xl text-sm font-black transition bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm">
+            會員登入
+          </button>
+          <button id="tab-btn-register" onclick="switchAuthMode('register')" class="py-2 rounded-xl text-sm font-black transition text-slate-500 dark:text-slate-400">
+            註冊新帳號
+          </button>
+        </div>
+
+        <!-- Google / GitHub 快捷登入 -->
+        <div id="oauth-buttons-section" class="space-y-2.5 mb-6">
+          <div class="grid grid-cols-2 gap-3">
+            <button type="button" onclick="handleOAuthLogin('Google')" class="py-2.5 px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-200 flex items-center justify-center gap-2 shadow-sm transition">
+              <i class="fa-brands fa-google text-rose-500"></i> Google 登入
+            </button>
+            <button type="button" onclick="handleOAuthLogin('GitHub')" class="py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-950 text-white border border-slate-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition">
+              <i class="fa-brands fa-github"></i> GitHub 登入
+            </button>
+          </div>
+          <div class="relative flex py-2 items-center">
+            <div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
+            <span class="flex-shrink mx-3 text-xs text-slate-400 font-bold">或使用電子信箱填寫資料</span>
+            <div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
+          </div>
+        </div>
+
+        <!-- 錯誤提示區 -->
+        <div id="auth-error-box" class="hidden mb-4 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-bold leading-relaxed"></div>
+
+        <!-- 登入表單 -->
+        <form id="auth-login-form" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">Email 電子信箱</label>
+            <input id="login-email" type="email" required placeholder="name@example.com" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none focus:border-indigo-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">密碼</label>
+            <input id="login-password" type="password" required placeholder="請輸入您的密碼" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none focus:border-indigo-500" />
+          </div>
+
+          <button type="submit" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:brightness-110 text-white font-black text-sm shadow-lg transition">
+            立即登入（自動記憶登入狀態）
+          </button>
+
+          <div class="pt-2 border-t border-slate-100 dark:border-slate-800 text-center">
+            <button type="button" onclick="quickLoginAsOwner()" class="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline">
+              <i class="fa-solid fa-crown mr-1"></i> 一鍵登入「擁有者」帳號（檢視用戶試算表與管理面板）
+            </button>
+          </div>
+        </form>
+
+        <!-- 註冊表單 -->
+        <form id="auth-register-form" onsubmit="handleRegisterSubmit(event)" class="hidden space-y-3.5">
+          <div>
+            <label class="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">Email 電子信箱 <span class="text-rose-500">*</span></label>
+            <input id="reg-email" type="email" required placeholder="player@example.com" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none focus:border-indigo-500" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">姓（可不填）</label>
+              <input id="reg-lastname" type="text" placeholder="例如：林" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none focus:border-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">名 <span class="text-rose-500">*</span></label>
+              <input id="reg-firstname" type="text" required placeholder="例如：星辰" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none focus:border-indigo-500" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">性別 <span class="text-rose-500">*</span></label>
+            <select id="reg-gender" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-bold outline-none focus:border-indigo-500">
+              <option value="男">男</option>
+              <option value="女">女</option>
+              <option value="多元性別">多元性別</option>
+              <option value="不願透露">不願透露</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">密碼 <span class="text-rose-500">*</span></label>
+            <input id="reg-password" type="password" required oninput="validatePasswordLive(this.value)" placeholder="至少8碼，含一大一小寫與指定特殊字元" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none focus:border-indigo-500" />
+            <div class="mt-1.5 text-[11px] space-y-0.5 text-slate-500 dark:text-slate-400">
+              <div id="pw-rule-len">• 至少 8 個字元</div>
+              <div id="pw-rule-case">• 至少包含 1 個大寫英文字母與 1 個小寫英文字母</div>
+              <div id="pw-rule-special">• 特殊字元僅接受 <code class="font-bold text-indigo-600 dark:text-sky-400">@ _ ? / '</code>（不可使用其他符號）</div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-black text-slate-600 dark:text-slate-300 mb-1">再次確認密碼 <span class="text-rose-500">*</span></label>
+            <input id="reg-confirm-password" type="password" required placeholder="請再次輸入相同密碼" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none focus:border-indigo-500" />
+          </div>
+
+          <!-- 驗證是否是機器人 -->
+          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-black text-slate-700 dark:text-slate-200"><i class="fa-solid fa-robot text-indigo-600 mr-1"></i> 驗證您不是機器人 <span class="text-rose-500">*</span></span>
+              <button type="button" onclick="generateHumanCaptcha()" class="text-xs font-bold text-indigo-600 dark:text-sky-400 hover:underline">
+                <i class="fa-solid fa-rotate mr-0.5"></i> 換一題
+              </button>
+            </div>
+            <div class="flex items-center gap-3">
+              <div id="captcha-question-box" class="px-4 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono font-black text-base tracking-wider select-none text-indigo-700 dark:text-sky-300">
+                12 + 7 = ?
+              </div>
+              <input id="reg-captcha-input" type="number" required placeholder="輸入答案" class="flex-1 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-bold outline-none focus:border-indigo-500" />
+            </div>
+          </div>
+
+          <button type="submit" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-600 hover:brightness-110 text-white font-black text-sm shadow-lg transition">
+            下一步：發送 6 位數 Email 驗證碼
+          </button>
+        </form>
+
+        <!-- 6 位數 Email 驗證碼步驟 -->
+        <form id="auth-verify-form" onsubmit="handleVerifyEmailCode(event)" class="hidden space-y-5 text-center">
+          <div class="w-16 h-16 rounded-2xl bg-indigo-500/15 text-indigo-600 dark:text-sky-400 flex items-center justify-center text-3xl mx-auto">
+            <i class="fa-solid fa-envelope-circle-check"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-black text-slate-900 dark:text-white">請驗證您的電子信箱</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              我們已發送 6 位數驗證碼至 <strong id="verify-target-email" class="text-indigo-600 dark:text-sky-400"></strong>
+            </p>
+            <div class="mt-2 inline-block px-3 py-1 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-black">
+              信箱安全驗證碼：<span id="simulated-otp-display" class="font-mono text-sm tracking-widest">123456</span>
+            </div>
+          </div>
+
+          <div>
+            <input
+              id="verify-otp-input"
+              type="text"
+              maxlength="6"
+              required
+              placeholder="請輸入 6 位數驗證碼"
+              class="w-full text-center tracking-[0.5em] font-mono text-2xl font-black py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none focus:border-indigo-500"
+            />
+          </div>
+
+          <button type="submit" class="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-lg transition">
+            完成驗證並自動登入
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 右下角固定控制區（Gemini AI 軍師客服 + 至最頂端按鈕） ==================== -->
+  <div class="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-3">
+    <!-- Gemini AI 客服視窗 -->
+    <div
+      id="ai-chat-window"
+      class="hidden w-[calc(100vw-2.5rem)] sm:w-[400px] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col"
+      style="max-height: 76vh;"
+    >
+      <div class="fwa-aurora p-4 text-white flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-lg relative">
+            <i class="fa-solid fa-sparkles"></i>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-indigo-700 absolute -bottom-0.5 -right-0.5"></span>
+          </div>
+          <div>
+            <div class="font-black text-sm flex items-center gap-1.5">
+              <span>Gemini AI 戰術軍師</span>
+              <span class="px-1.5 py-0.2 rounded bg-white/25 text-[10px] font-black">GEMINI</span>
+            </div>
+            <div class="text-[11px] text-white/90">精通優先裝備、卡牌連擊與高階機器人攻略</div>
+          </div>
+        </div>
+        <button onclick="toggleAIChat(false)" class="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition">
+          <i class="fa-solid fa-chevron-down"></i>
+        </button>
+      </div>
+
+      <!-- 訊息紀錄區 -->
+      <div id="ai-chat-messages" class="p-4 space-y-3.5 overflow-y-auto flex-1 bg-slate-50/70 dark:bg-slate-950/60 text-sm" style="min-height: 240px;">
+        <div class="flex items-start gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-xs shrink-0 mt-0.5">
+            <i class="fa-solid fa-sparkles"></i>
+          </div>
+          <div class="bg-white dark:bg-slate-800 p-3.5 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-200 leading-relaxed">
+            嗨！我是連接 <strong>Google Gemini</strong> 的猜拳對決戰術軍師 ⚔️<br/>
+            無論你想了解「幸運手套」為何不會跳過第 1 回合、如何組出平手必勝連擊，或是怎麼擊敗 Lv.4 終極超汐魔王 AI，隨時問我吧！
+          </div>
+        </div>
+      </div>
+
+      <!-- 快捷提問 Chips -->
+      <div class="px-3.5 py-2 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+        <button onclick="sendQuickAIQuestion('幸運手套跟鏡像複製怎麼搭配最強？')" class="shrink-0 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-bold">🧤 幸運手套連擊</button>
+        <button onclick="sendQuickAIQuestion('怎麼打贏 Lv.4 終極超汐魔王 AI？')" class="shrink-0 px-2.5 py-1 rounded-full bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-bold">👑 攻略魔王AI</button>
+        <button onclick="sendQuickAIQuestion('幫我解釋一下平手與優先結算規則')" class="shrink-0 px-2.5 py-1 rounded-full bg-sky-50 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 text-xs font-bold">📜 核心規則解析</button>
+      </div>
+
+      <!-- 輸入框 -->
+      <form onsubmit="handleAIChatSubmit(event)" class="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2 shrink-0">
+        <input
+          id="ai-chat-input"
+          type="text"
+          placeholder="向 Gemini AI 詢問戰術或客服問題..."
+          class="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+        <button type="submit" id="ai-chat-send-btn" class="w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shadow-sm transition shrink-0">
+          <i class="fa-solid fa-paper-plane text-xs"></i>
+        </button>
+      </form>
+    </div>
+
+    <!-- 懸浮按鈕列：AI 客服 + 至最頂端按鈕 -->
+    <div class="flex items-center gap-3">
+      <button
+        onclick="toggleAIChat()"
+        aria-label="開啟 Gemini AI 客服"
+        class="flex items-center gap-2.5 px-4 py-3 rounded-full fwa-aurora hover:brightness-110 text-white font-black text-sm shadow-2xl transition-all hover:scale-105"
+      >
+        <i class="fa-solid fa-headset text-base"></i>
+        <span>Gemini AI 客服</span>
+      </button>
+
+      <button
+        id="scroll-to-top-btn"
+        onclick="scrollToTop()"
+        title="至最頂端"
+        aria-label="至最頂端"
+        class="w-12 h-12 rounded-full bg-white dark:bg-slate-800 hover:bg-amber-500 dark:hover:bg-amber-500 text-slate-700 dark:text-white hover:text-white border border-slate-200 dark:border-slate-700 shadow-xl flex items-center justify-center transition-all duration-300 opacity-0 translate-y-4 pointer-events-none"
+      >
+        <i class="fa-solid fa-arrow-up text-base"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== 輕量級通知 Toast ==================== -->
+  <div id="toast-notification" class="fixed top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 -translate-y-3 transition-all duration-300">
+    <div class="bg-slate-900/95 text-white px-5 py-3 rounded-2xl shadow-2xl text-sm font-bold flex items-center gap-2.5 backdrop-blur-md border border-white/10">
+      <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+      <span id="toast-message">操作成功</span>
+    </div>
+  </div>
+
+  <!-- ==================== JAVASCRIPT 完整遊戲引擎與系統邏輯 ==================== -->
+  <script>
+    /* =========================================================================
+       1. 遊戲資料庫：不同等級機器人、優先結算裝備、策略卡牌
+       ========================================================================= */
+    const BOT_TIERS = [
+      {
+        id: "bot-lv1",
+        level: "Lv.1",
+        name: "街頭見習機器人",
+        subtitle: "基礎運算核心 · 適合熟悉優先結算規則",
+        badgeColor: "from-emerald-500 to-teal-600",
+        winCoins: 180,
+        winGems: 80,
+        aiStyle: "random",
+        botEquipName: "無裝備",
+        desc: "出拳隨機且溫和，偶爾使用普通卡牌，是測試「幸運手套」與卡牌連擊的最佳練習對象。"
+      },
+      {
+        id: "bot-lv2",
+        level: "Lv.2",
+        name: "戰術計算機器人",
+        subtitle: "頻率分析模組 · 會針對你常出的拳反制",
+        badgeColor: "from-sky-500 to-blue-600",
+        winCoins: 320,
+        winGems: 140,
+        aiStyle: "counter_frequent",
+        botEquipName: "微光護盾",
+        desc: "會統計你本局最常出的手勢並提高克制機率，且在落後時會發動「雙倍狂熱」追分！"
+      },
+      {
+        id: "bot-lv3",
+        level: "Lv.3",
+        name: "讀心大師機器人",
+        subtitle: "神經網路預測 · 擅長破解連勝節奏",
+        badgeColor: "from-purple-500 to-indigo-600",
+        winCoins: 520,
+        winGems: 240,
+        aiStyle: "mind_reader",
+        botEquipName: "反制核心",
+        desc: "具備高階心理博弈演算法，善用「逆轉乾坤」與「平手奪勝」，建議搭配先知透視鏡應戰！"
+      },
+      {
+        id: "bot-lv4",
+        level: "Lv.4",
+        name: "終極超汐魔王 AI",
+        subtitle: "神話級演算核心 · 壓迫感滿點的巔峰首領",
+        badgeColor: "from-amber-500 via-orange-600 to-rose-600",
+        winCoins: 900,
+        winGems: 450,
+        aiStyle: "overlord",
+        botEquipName: "超汐霸主裝甲",
+        desc: "擁有極高預測精準度與高頻率卡牌發動率，擊敗它可獲得海量金幣與星界晶石獎勵！"
+      }
+    ];
+
+    // 優先結算裝備資料庫（嚴格遵守：裝備技能優先結算；幸運手套不會跳過第1回合）
+    const EQUIPMENT_DB = [
+      {
+        id: "eq-lucky-glove",
+        name: "幸運手套",
+        rarity: "SR",
+        priceCoins: 450,
+        icon: "🧤",
+        priorityTag: "優先結算 · 第2回合起生效",
+        shortDesc: "平手時直接改判為你獲勝（絕不跳過第 1 回合）。",
+        fullDesc: "【裝備技能優先結算】幸運女神眷顧的黃金手套。自第 2 回合起，只要雙方出拳相同形成平手，優先結算改判為你獲得 1 勝！依神聖契約：幸運手套不會跳過第 1 回合，第 1 回合仍正常進行出拳與結算。"
+      },
+      {
+        id: "eq-oracle-lens",
+        name: "先知透視鏡",
+        rarity: "SSR",
+        priceCoins: 780,
+        icon: "🔮",
+        priorityTag: "優先結算 · 回合前透視",
+        shortDesc: "回合開始時有 65% 機率提前看穿機器人預定出拳！",
+        fullDesc: "【裝備技能優先結算】搭載量子預知晶片的單片眼鏡。每回合雙方出拳前優先啟動，有 65% 機率直接鎖定並顯示機器人本回合的預定出拳。"
+      },
+      {
+        id: "eq-titan-gauntlet",
+        name: "重裝碎岩拳套",
+        rarity: "SR",
+        priceCoins: 520,
+        icon: "🥊",
+        priorityTag: "優先結算 · 石頭爆發",
+        shortDesc: "使用「石頭」獲勝時，額外再獲得 +1 勝場（單局 +2 勝）！",
+        fullDesc: "【裝備技能優先結算】灌注熔岩之力的重裝護手。當你出「石頭」並取得該回合勝利時，優先觸發碎岩連擊，額外追加 +1 勝場！"
+      },
+      {
+        id: "eq-zephyr-blades",
+        name: "疾風剪刀刃",
+        rarity: "R",
+        priceCoins: 350,
+        icon: "⚔️",
+        priorityTag: "優先結算 · 逆境追擊",
+        shortDesc: "勝場落後時使用「剪刀」獲勝，額外追加 +1 勝場！",
+        fullDesc: "【裝備技能優先結算】輕盈銳利的風屬性臂刃。當你目前勝場數落後於機器人，且使用「剪刀」獲勝時，優先發動疾風追擊額外 +1 勝！"
+      },
+      {
+        id: "eq-aegis-mirror",
+        name: "不屈護心鏡",
+        rarity: "R",
+        priceCoins: 380,
+        icon: "🛡️",
+        priorityTag: "優先結算 · 連敗保護",
+        shortDesc: "處於連敗狀態時若再度落敗，抵銷對手 1 勝並獲得 80 金幣。",
+        fullDesc: "【裝備技能優先結算】守護挑戰者意志的秘銀胸鏡。當你處於連敗狀態（連敗 ≥ 1）卻不幸再度落敗時，優先抵銷對手本回合的勝場進帳，並補償 80 金幣。"
+      },
+      {
+        id: "eq-jade-wrap",
+        name: "翡翠首戰護符",
+        rarity: "N",
+        priceCoins: 200,
+        icon: "🧿",
+        priorityTag: "優先結算 · 第1回合祝福",
+        shortDesc: "第 1 回合無論勝負或平手，額外獲得 100 枚對戰金幣！",
+        fullDesc: "【裝備技能優先結算】專為首回合設計的幸運護符。在每場對決的第 1 回合結算時優先發動，額外為你帶來 100 枚對戰金幣進帳。"
+      }
+    ];
+
+    // 策略行動卡牌資料庫（共 10 張）
+    const CARDS_DB = [
+      {
+        id: "card-polarity-flip",
+        name: "逆轉乾坤",
+        rarity: "SSR",
+        icon: "🌀",
+        type: "規則改寫",
+        desc: "本回合勝負關係完全反轉（剪刀贏石頭、石頭贏布、布贏剪刀），平手依舊為平手。"
+      },
+      {
+        id: "card-last-stand",
+        name: "背水一戰",
+        rarity: "SSR",
+        icon: "🔥",
+        type: "終局逆轉",
+        desc: "當機器人已達 4 勝（聽牌賽點）時發動，本回合若獲勝直接 +3 勝場大逆轉！"
+      },
+      {
+        id: "card-double-fever",
+        name: "雙倍狂熱",
+        rarity: "SR",
+        icon: "⚡",
+        type: "勝場加倍",
+        desc: "本回合只要成功擊敗機器人，獲得的勝場數直接 +2！"
+      },
+      {
+        id: "card-mirror-mimic",
+        name: "鏡像複製",
+        rarity: "SR",
+        icon: "🪞",
+        type: "強制平手",
+        desc: "本回合自動複製機器人的出拳形成平手！搭配「幸運手套」可打出必勝連擊！"
+      },
+      {
+        id: "card-streak-surge",
+        name: "連勝增幅",
+        rarity: "SR",
+        icon: "🚀",
+        type: "連勝加成",
+        desc: "若你目前處於連勝狀態（連勝 ≥ 1），本回合獲勝額外 +1 勝場！"
+      },
+      {
+        id: "card-tie-breaker",
+        name: "平手奪勝",
+        rarity: "R",
+        icon: "⚖️",
+        type: "平手改寫",
+        desc: "本回合若雙方出拳相同形成平手，不走一般平手，直接改判為你獲得 1 勝！"
+      },
+      {
+        id: "card-seal-rock",
+        name: "岩石封印",
+        rarity: "R",
+        icon: "🪨",
+        type: "手勢封印",
+        desc: "封印機器人本回合的「石頭」選項，對手只能從剪刀與布之中選擇！"
+      },
+      {
+        id: "card-seal-scissors",
+        name: "剪刀封印",
+        rarity: "R",
+        icon: "✂️",
+        type: "手勢封印",
+        desc: "封印機器人本回合的「剪刀」選項，對手只能從石頭與布之中選擇！"
+      },
+      {
+        id: "card-seal-paper",
+        name: "布匹封印",
+        rarity: "R",
+        icon: "📜",
+        type: "手勢封印",
+        desc: "封印機器人本回合的「布」選項，對手只能從石頭與剪刀之中選擇！"
+      },
+      {
+        id: "card-fortune-coin",
+        name: "幸運金幣雨",
+        rarity: "N",
+        icon: "💰",
+        type: "經濟補給",
+        desc: "無論本回合勝負或平手，額外獲得 150 枚對戰金幣！"
+      }
+    ];
+
+    /* =========================================================================
+       2. 應用程式與遊戲狀態（完全使用記憶體與 Cookie Session，絕不使用 localStorage）
+       ========================================================================= */
+    const ROLE_LEVELS = {
+      "一般": 1,
+      "管理員": 2,
+      "開發者": 3,
+      "擁有者": 4
+    };
+
+    const DEFAULT_USERS_SEED = [
+      {
+        id: "USR-001",
+        email: "chaoxi@unique-machine-478619-u4.iam.gserviceaccount.com",
+        lastName: "超汐",
+        firstName: "擁有者",
+        gender: "不願透露",
+        provider: "Service Account / Email",
+        password: "Owner123@",
+        verified: true,
+        role: "擁有者",
+        createdAt: "2026-11-13 09:00:00"
+      },
+      {
+        id: "USR-002",
+        email: "dev.nexus@rps2026.tw",
+        lastName: "林",
+        firstName: "開發者",
+        gender: "男",
+        provider: "GitHub",
+        password: "Dev12345@",
+        verified: true,
+        role: "開發者",
+        createdAt: "2026-11-13 11:20:00"
+      },
+      {
+        id: "USR-003",
+        email: "admin.judge@rps2026.tw",
+        lastName: "陳",
+        firstName: "裁判長",
+        gender: "女",
+        provider: "Google",
+        password: "Admin123@",
+        verified: true,
+        role: "管理員",
+        createdAt: "2026-11-13 13:15:00"
+      },
+      {
+        id: "USR-004",
+        email: "challenger.one@example.com",
+        lastName: "王",
+        firstName: "小星",
+        gender: "女",
+        provider: "Email",
+        password: "User1234@",
+        verified: true,
+        role: "一般",
+        createdAt: "2026-11-13 15:45:00"
+      }
+    ];
+
+    const appState = {
+      activeTab: "arena",
+      soundEnabled: true,
+      // 玩家資產與圖鑑背包
+      coins: 1500,
+      gems: 1000,
+      ownedEquipments: ["eq-jade-wrap"],
+      equippedItems: ["eq-jade-wrap"],
+      ownedCards: {
+        "card-double-fever": 2,
+        "card-tie-breaker": 2,
+        "card-mirror-mimic": 1,
+        "card-seal-rock": 1,
+        "card-fortune-coin": 2
+      },
+      codexFilter: "all",
+
+      // 對戰競技場狀態
+      selectedBotId: "bot-lv1",
+      round: 1,
+      playerWins: 0,
+      botWins: 0,
+      playerWinStreak: 0,
+      playerLoseStreak: 0,
+      botWinStreak: 0,
+      botLoseStreak: 0,
+      playerMoveHistory: [],
+      handCards: [],
+      selectedCardId: null,
+      revealedBotMove: null,
+      matchOver: false,
+      combatLogs: [],
+
+      // 用戶試算表與權限系統
+      usersDB: [...DEFAULT_USERS_SEED],
+      currentUser: null,
+      totalViews: 1428,
+      lastViewUpdated: "",
+      pendingRegistration: null,
+      captchaAnswer: 0,
+
+      // AI 軍師對話
+      aiChatOpen: false,
+      aiHistory: []
+    };
+
+    /* =========================================================================
+       3. 輕量級 Web Audio API 音效引擎（無外部音訊連結）
+       ========================================================================= */
+    let audioCtx = null;
+    function playGameTone(type = "click") {
+      if (!appState.soundEnabled) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === "suspended") audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+        if (type === "click") {
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(780, now + 0.08);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+          osc.start(now);
+          osc.stop(now + 0.09);
+        } else if (type === "win") {
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.setValueAtTime(659.25, now + 0.09);
+          osc.frequency.setValueAtTime(783.99, now + 0.18);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === "lose") {
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(300, now);
+          osc.frequency.linearRampToValueAtTime(170, now + 0.25);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+          osc.start(now);
+          osc.stop(now + 0.26);
+        } else if (type === "tie") {
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.setValueAtTime(440, now + 0.12);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          osc.start(now);
+          osc.stop(now + 0.18);
+        }
+      } catch (e) {}
+    }
+
+    function toggleSound() {
+      appState.soundEnabled = !appState.soundEnabled;
+      const icon = document.getElementById("sound-icon");
+      if (icon) {
+        icon.className = appState.soundEnabled ? "fa-solid fa-volume-high text-sm" : "fa-solid fa-volume-xmark text-sm text-slate-400";
+      }
+      showToast(appState.soundEnabled ? "戰鬥音效已開啟" : "戰鬥音效已靜音", "info");
+    }
+
+    /* =========================================================================
+       4. Cookie Session 記憶登入狀態與瀏覽次數同步
+       ========================================================================= */
+    function setSessionCookie(email) {
+      try {
+        if (email) {
+          document.cookie = `rps_nexus_session=${encodeURIComponent(email)}; path=/; max-age=604800; SameSite=Lax`;
+        } else {
+          document.cookie = "rps_nexus_session=; path=/; max-age=0; SameSite=Lax";
+        }
+      } catch (e) {}
+    }
+
+    function getSessionCookie() {
+      try {
+        const match = document.cookie.match(/(?:^|;\s*)rps_nexus_session=([^;]*)/);
+        return match ? decodeURIComponent(match[1]) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function initSystemCountersAndSession() {
+      const rememberedEmail = getSessionCookie();
+      if (rememberedEmail) {
+        const found = appState.usersDB.find(u => u.email === rememberedEmail);
+        if (found) appState.currentUser = found;
+      }
+
+      appState.totalViews += 1;
+      appState.lastViewUpdated = new Date().toLocaleString("zh-TW", { hour12: false });
+      syncViewCounterUI();
+      updateCurrencyUI();
+    }
+
+    function syncViewCounterUI() {
+      const formatted = appState.totalViews.toLocaleString("zh-TW");
+      const footerEl = document.getElementById("footer-view-counter");
+      const adminStatEl = document.getElementById("admin-stat-views");
+      const sheetCellEl = document.getElementById("sheet-view-count-cell");
+      const sheetTimeEl = document.getElementById("sheet-view-updated-cell");
+
+      if (footerEl) footerEl.textContent = formatted;
+      if (adminStatEl) adminStatEl.textContent = formatted;
+      if (sheetCellEl) sheetCellEl.textContent = formatted;
+      if (sheetTimeEl) sheetTimeEl.textContent = appState.lastViewUpdated;
+    }
+
+    function updateCurrencyUI() {
+      const cStr = appState.coins.toLocaleString("zh-TW");
+      const gStr = appState.gems.toLocaleString("zh-TW");
+      ["header-coins", "mobile-coins", "shop-coins-display"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = cStr;
+      });
+      ["header-gems", "mobile-gems", "shop-gems-display"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = gStr;
+      });
+    }
+
+    /* =========================================================================
+       5. 黑暗模式切換 (Dark Mode)
+       ========================================================================= */
+    function toggleDarkMode() {
+      const isDark = document.documentElement.classList.toggle("dark");
+      const icon = document.getElementById("dark-mode-icon");
+      if (icon) {
+        icon.className = isDark ? "fa-solid fa-sun text-sm" : "fa-solid fa-moon text-sm";
+      }
+    }
+
+    /* =========================================================================
+       6. 分頁切換引擎
+       ========================================================================= */
+    function switchTab(tabName) {
+      if (tabName === "admin") {
+        const userLevel = appState.currentUser ? (ROLE_LEVELS[appState.currentUser.role] || 1) : 0;
+        if (userLevel < ROLE_LEVELS["管理員"]) {
+          showToast("需要「管理員」以上權限才能開啟管理面板！", "info");
+          openAuthModal("login");
+          return;
+        }
+      }
+
+      appState.activeTab = tabName;
+      ["arena", "gacha", "shop", "codex", "admin"].forEach(id => {
+        const el = document.getElementById(`view-${id}`);
+        if (el) el.classList.add("hidden");
+      });
+
+      const target = document.getElementById(`view-${tabName}`);
+      if (target) target.classList.remove("hidden");
+
+      document.querySelectorAll(".nav-btn").forEach(btn => {
+        const isMatch = btn.getAttribute("data-nav") === tabName;
+        if (isMatch) {
+          btn.classList.add("bg-indigo-600", "text-white", "shadow-sm");
+          btn.classList.remove("text-slate-600", "dark:text-slate-300");
+        } else {
+          btn.classList.remove("bg-indigo-600", "text-white", "shadow-sm");
+          btn.classList.add("text-slate-600", "dark:text-slate-300");
+        }
+      });
+
+      if (tabName === "arena") {
+        renderArenaAll();
+      } else if (tabName === "shop") {
+        renderShopView();
+      } else if (tabName === "codex") {
+        renderCodexView();
+      } else if (tabName === "admin") {
+        renderAdminPanel();
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    /* =========================================================================
+       7. 核心猜拳對決引擎（嚴格實作四大核心規則）
+       ========================================================================= */
+    const MOVE_INFO = {
+      scissors: { name: "剪刀", emoji: "✌️" },
+      rock: { name: "石頭", emoji: "✊" },
+      paper: { name: "布", emoji: "🖐️" }
+    };
+
+    function selectBotTier(botId) {
+      appState.selectedBotId = botId;
+      startNewMatch();
+      const bot = BOT_TIERS.find(b => b.id === botId);
+      showToast(`已切換對手為「${bot.level} ${bot.name}」並開啟新對決！`, "info");
+    }
+
+    function startNewMatch() {
+      appState.round = 1;
+      appState.playerWins = 0;
+      appState.botWins = 0;
+      appState.playerWinStreak = 0;
+      appState.playerLoseStreak = 0;
+      appState.botWinStreak = 0;
+      appState.botLoseStreak = 0;
+      appState.playerMoveHistory = [];
+      appState.selectedCardId = null;
+      appState.revealedBotMove = null;
+      appState.matchOver = false;
+      appState.combatLogs = [];
+
+      refillInitialHand();
+
+      document.getElementById("player-move-orb").textContent = "❔";
+      document.getElementById("player-move-label").textContent = "等待出拳";
+      document.getElementById("bot-move-orb").textContent = "🤖";
+      document.getElementById("bot-move-label").textContent = "機器人演算中";
+      document.getElementById("round-outcome-badge").textContent = "VS";
+      document.getElementById("round-outcome-sub").textContent = "雙方出拳相同即平手（不加分且連敗歸零）";
+      document.getElementById("match-over-panel").classList.add("hidden");
+      document.getElementById("rps-action-buttons").classList.remove("opacity-40", "pointer-events-none");
+
+      const bot = BOT_TIERS.find(b => b.id === appState.selectedBotId);
+      addCombatLog(`⚔️ 新對決開始！對手：【${bot.level} ${bot.name}】（先取得 5 勝者立即獲勝）`, "system");
+
+      prepareRoundPriorityEffects();
+      renderArenaAll();
+    }
+
+    function refillInitialHand() {
+      const pool = [];
+      Object.entries(appState.ownedCards).forEach(([cId, count]) => {
+        for (let i = 0; i < count; i++) pool.push(cId);
+      });
+      if (pool.length === 0) {
+        pool.push("card-double-fever", "card-tie-breaker", "card-fortune-coin");
+      }
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      appState.handCards = pool.slice(0, 4);
+    }
+
+    function drawBonusHandCard() {
+      if (appState.matchOver) {
+        showToast("本場對決已結束，請先點擊「重新開局」！", "info");
+        return;
+      }
+      if (appState.handCards.length >= 6) {
+        showToast("手牌上限為 6 張，請先使用手牌！", "info");
+        return;
+      }
+      if (appState.coins < 60) {
+        showToast("對戰金幣不足 60 枚！", "info");
+        return;
+      }
+      appState.coins -= 60;
+      updateCurrencyUI();
+
+      const pool = Object.keys(appState.ownedCards);
+      const randomCardId = pool.length > 0
+        ? pool[Math.floor(Math.random() * pool.length)]
+        : CARDS_DB[Math.floor(Math.random() * CARDS_DB.length)].id;
+
+      appState.handCards.push(randomCardId);
+      const cObj = CARDS_DB.find(c => c.id === randomCardId);
+      playGameTone("click");
+      showToast(`消耗 60 金幣抽到手牌「${cObj.name}」！`, "success");
+      renderArenaHandCards();
+    }
+
+    function toggleSelectHandCard(index) {
+      if (appState.matchOver) return;
+      playGameTone("click");
+      if (appState.selectedCardId === index) {
+        appState.selectedCardId = null;
+      } else {
+        appState.selectedCardId = index;
+      }
+      renderArenaHandCards();
+    }
+
+    function toggleEquipItem(equipId) {
+      if (!appState.ownedEquipments.includes(equipId)) {
+        showToast("尚未擁有此裝備，請先至道具裝備店購買！", "info");
+        return;
+      }
+      playGameTone("click");
+      const idx = appState.equippedItems.indexOf(equipId);
+      const eqObj = EQUIPMENT_DB.find(e => e.id === equipId);
+
+      if (idx > -1) {
+        appState.equippedItems.splice(idx, 1);
+        showToast(`已卸下裝備「${eqObj.name}」`, "info");
+      } else {
+        if (appState.equippedItems.length >= 2) {
+          const removedId = appState.equippedItems.shift();
+          const removedObj = EQUIPMENT_DB.find(e => e.id === removedId);
+          showToast(`裝備欄已滿，自動替換「${removedObj.name}」為「${eqObj.name}」`, "info");
+        } else {
+          showToast(`已裝備「${eqObj.name}」（優先結算生效中）！`, "success");
+        }
+        appState.equippedItems.push(equipId);
+      }
+
+      if (!appState.matchOver) {
+        prepareRoundPriorityEffects();
+      }
+      renderArenaEquipSlots();
+    }
+
+    // 每回合出拳前：優先結算裝備主動偵測效果（先知透視鏡、幸運手套首回合不跳過提示）
+    function prepareRoundPriorityEffects() {
+      appState.revealedBotMove = null;
+      const notices = [];
+
+      if (appState.equippedItems.includes("eq-lucky-glove")) {
+        if (appState.round === 1) {
+          notices.push("🧤 幸運手套已裝備（依規則：幸運手套不會跳過第 1 回合，本回合正常出拳結算！）");
+        } else {
+          notices.push(`🧤 幸運手套優先啟動中：第 ${appState.round} 回合若雙方平手，將優先改判為你獲勝！`);
+        }
+      }
+
+      if (appState.equippedItems.includes("eq-oracle-lens")) {
+        if (Math.random() < 0.65) {
+          const predicted = computeBotMove("all");
+          appState.revealedBotMove = predicted;
+          notices.push(`🔮 先知透視鏡優先發動！看穿機器人本回合預計出【${MOVE_INFO[predicted].emoji} ${MOVE_INFO[predicted].name}】！`);
+        } else {
+          notices.push("🔮 先知透視鏡掃描中（本回合訊號干擾未鎖定）。");
+        }
+      }
+
+      if (appState.equippedItems.includes("eq-jade-wrap") && appState.round === 1) {
+        notices.push("🧿 翡翠首戰護符就緒：第 1 回合結算時優先獲得 +100 金幣！");
+      }
+
+      const bannerText = document.getElementById("priority-equip-text");
+      if (bannerText) {
+        bannerText.textContent = notices.length > 0
+          ? notices.join(" ｜ ")
+          : "【裝備技能優先結算】目前無特殊前置觸發，請選擇出拳或搭配手牌！";
+      }
+    }
+
+    function computeBotMove(sealedMove) {
+      const bot = BOT_TIERS.find(b => b.id === appState.selectedBotId) || BOT_TIERS[0];
+      const allMoves = ["scissors", "rock", "paper"].filter(m => m !== sealedMove);
+      if (allMoves.length === 1) return allMoves[0];
+
+      if (appState.revealedBotMove && appState.revealedBotMove !== sealedMove) {
+        return appState.revealedBotMove;
+      }
+
+      const counterOf = { rock: "paper", paper: "scissors", scissors: "rock" };
+
+      if (bot.aiStyle === "counter_frequent" && appState.playerMoveHistory.length >= 2 && Math.random() < 0.55) {
+        const counts = { rock: 0, paper: 0, scissors: 0 };
+        appState.playerMoveHistory.forEach(m => counts[m]++);
+        const mostUsed = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+        const target = counterOf[mostUsed];
+        if (allMoves.includes(target)) return target;
+      }
+
+      if (bot.aiStyle === "mind_reader" && appState.playerMoveHistory.length >= 1 && Math.random() < 0.65) {
+        const lastMove = appState.playerMoveHistory[appState.playerMoveHistory.length - 1];
+        const target = counterOf[lastMove];
+        if (allMoves.includes(target)) return target;
+      }
+
+      if (bot.aiStyle === "overlord" && appState.playerMoveHistory.length >= 1 && Math.random() < 0.72) {
+        const lastMove = appState.playerMoveHistory[appState.playerMoveHistory.length - 1];
+        const target = counterOf[lastMove];
+        if (allMoves.includes(target)) return target;
+      }
+
+      return allMoves[Math.floor(Math.random() * allMoves.length)];
+    }
+
+    function playRPSRound(playerMove) {
+      if (appState.matchOver) {
+        showToast("本場對決已達 5 勝結束！請點擊「重新開局」", "info");
+        return;
+      }
+
+      const currentRound = appState.round;
+      const roundLogs = [];
+      let playedCard = null;
+
+      if (appState.selectedCardId !== null && appState.handCards[appState.selectedCardId]) {
+        const cId = appState.handCards[appState.selectedCardId];
+        playedCard = CARDS_DB.find(c => c.id === cId);
+        appState.handCards.splice(appState.selectedCardId, 1);
+        appState.selectedCardId = null;
+      }
+
+      let sealedMove = null;
+      if (playedCard) {
+        if (playedCard.id === "card-seal-rock") sealedMove = "rock";
+        if (playedCard.id === "card-seal-scissors") sealedMove = "scissors";
+        if (playedCard.id === "card-seal-paper") sealedMove = "paper";
+      }
+
+      let botMove = computeBotMove(sealedMove);
+
+      if (playedCard && playedCard.id === "card-mirror-mimic") {
+        playerMove = botMove;
+        roundLogs.push(`🪞【卡牌發動】鏡像複製！你同步複製了對手的【${MOVE_INFO[botMove].name}】！`);
+      } else if (playedCard) {
+        roundLogs.push(`🃏【卡牌發動】使用「${playedCard.name}」：${playedCard.desc}`);
+      }
+
+      appState.playerMoveHistory.push(playerMove);
+
+      // ==================== 階段一：裝備技能優先結算 ====================
+      let luckyGloveActiveThisRound = false;
+      if (appState.equippedItems.includes("eq-lucky-glove")) {
+        if (currentRound === 1) {
+          roundLogs.push("🧤【裝備優先結算】幸運手套（第 1 回合保護：幸運手套不會跳過第 1 回合，正常進行勝負判定）。");
+        } else {
+          luckyGloveActiveThisRound = true;
+          roundLogs.push("🧤【裝備優先結算】幸運手套已就緒（若本回合平手將優先判你獲勝）。");
+        }
+      }
+
+      if (appState.equippedItems.includes("eq-jade-wrap") && currentRound === 1) {
+        appState.coins += 100;
+        roundLogs.push("🧿【裝備優先結算】翡翠首戰護符觸發！第 1 回合額外獲得 +100 金幣！");
+      }
+
+      // ==================== 階段二：基礎猜拳勝負與平手規則結算 ====================
+      const isSameMove = (playerMove === botMove);
+      const standardBeats = { rock: "scissors", scissors: "paper", paper: "rock" };
+      const isPolarityFlipped = (playedCard && playedCard.id === "card-polarity-flip");
+
+      let outcome = "tie";
+      let playerGainWins = 0;
+      let botGainWins = 0;
+
+      if (isSameMove) {
+        if (luckyGloveActiveThisRound) {
+          outcome = "player";
+          playerGainWins = 1;
+          roundLogs.push("✨【裝備優先改判】雙方同出「" + MOVE_INFO[playerMove].name + "」，幸運手套優先發動將平手改判為你獲得 +1 勝！");
+        } else if (playedCard && playedCard.id === "card-tie-breaker") {
+          outcome = "player";
+          playerGainWins = 1;
+          roundLogs.push("⚖️【卡牌改判】雙方同出「" + MOVE_INFO[playerMove].name + "」，平手奪勝卡牌改判為你獲得 +1 勝！");
+        } else {
+          // 一般平手雙方不加分，且連敗歸零
+          outcome = "tie";
+          playerGainWins = 0;
+          botGainWins = 0;
+          appState.playerLoseStreak = 0;
+          appState.botLoseStreak = 0;
+          roundLogs.push(`🤝【一般平手】雙方皆出「${MOVE_INFO[playerMove].name}」！依規則：雙方不加分（+0），且雙方連敗歸零！`);
+        }
+      } else {
+        const playerWonRaw = isPolarityFlipped
+          ? (standardBeats[botMove] === playerMove)
+          : (standardBeats[playerMove] === botMove);
+
+        if (isPolarityFlipped) {
+          roundLogs.push("🌀【逆轉乾坤】本回合克制關係完全反轉！");
+        }
+
+        if (playerWonRaw) {
+          outcome = "player";
+          playerGainWins = 1;
+
+          if (appState.equippedItems.includes("eq-titan-gauntlet") && playerMove === "rock") {
+            playerGainWins += 1;
+            roundLogs.push("🥊【裝備優先結算】重裝碎岩拳套爆發！石頭獲勝額外 +1 勝！");
+          }
+          if (appState.equippedItems.includes("eq-zephyr-blades") && playerMove === "scissors" && appState.playerWins < appState.botWins) {
+            playerGainWins += 1;
+            roundLogs.push("⚔️【裝備優先結算】疾風剪刀刃追擊！落後時剪刀獲勝額外 +1 勝！");
+          }
+
+          if (playedCard && playedCard.id === "card-double-fever") {
+            playerGainWins += 1;
+            roundLogs.push("⚡【卡牌加成】雙倍狂熱生效，本回合勝場額外 +1！");
+          }
+          if (playedCard && playedCard.id === "card-streak-surge" && appState.playerWinStreak >= 1) {
+            playerGainWins += 1;
+            roundLogs.push(`🚀【卡牌加成】連勝增幅生效（目前 ${appState.playerWinStreak} 連勝），額外 +1 勝！`);
+          }
+          if (playedCard && playedCard.id === "card-last-stand" && appState.botWins >= 4) {
+            playerGainWins += 2;
+            roundLogs.push("🔥【卡牌絕境爆發】背水一戰成功！對手聽牌下獲勝共得 +3 勝！");
+          }
+        } else {
+          outcome = "bot";
+          botGainWins = 1;
+
+          if (appState.equippedItems.includes("eq-aegis-mirror") && appState.playerLoseStreak >= 1) {
+            botGainWins = 0;
+            appState.coins += 80;
+            roundLogs.push("🛡️【裝備優先結算】不屈護心鏡啟動！抵銷對手本回合勝場進帳，並補償 +80 金幣！");
+          } else {
+            const bot = BOT_TIERS.find(b => b.id === appState.selectedBotId);
+            if (bot && (bot.id === "bot-lv3" || bot.id === "bot-lv4") && currentRound >= 3 && Math.random() < 0.22 && appState.botWins < 4) {
+              botGainWins += 1;
+              roundLogs.push(`🤖【首領技能】${bot.name} 發動超頻連擊，本回合取得 +2 勝！`);
+            }
+          }
+        }
+      }
+
+      if (playedCard && playedCard.id === "card-fortune-coin") {
+        appState.coins += 150;
+        roundLogs.push("💰【卡牌經濟】幸運金幣雨降臨，額外獲得 +150 金幣！");
+      }
+
+      if (outcome === "player") {
+        appState.playerWins += playerGainWins;
+        appState.playerWinStreak += 1;
+        appState.playerLoseStreak = 0;
+        appState.botWinStreak = 0;
+        appState.botLoseStreak += 1;
+        playGameTone("win");
+        roundLogs.unshift(`🎉 第 ${currentRound} 回合你獲勝（+${playerGainWins} 勝）！目前比數 ${appState.playerWins} : ${appState.botWins}`);
+      } else if (outcome === "bot") {
+        appState.botWins += botGainWins;
+        appState.botWinStreak += 1;
+        appState.botLoseStreak = 0;
+        appState.playerWinStreak = 0;
+        appState.playerLoseStreak += 1;
+        playGameTone("lose");
+        roundLogs.unshift(`💥 第 ${currentRound} 回合機器人獲勝（+${botGainWins} 勝）！目前比數 ${appState.playerWins} : ${appState.botWins}`);
+      } else {
+        playGameTone("tie");
+        roundLogs.unshift(`⚖️ 第 ${currentRound} 回合平手！比數維持 ${appState.playerWins} : ${appState.botWins}（連敗已歸零）`);
+      }
+
+      const pOrb = document.getElementById("player-move-orb");
+      const bOrb = document.getElementById("bot-move-orb");
+      pOrb.textContent = MOVE_INFO[playerMove].emoji;
+      bOrb.textContent = MOVE_INFO[botMove].emoji;
+      document.getElementById("player-move-label").textContent = `你出了【${MOVE_INFO[playerMove].name}】`;
+      document.getElementById("bot-move-label").textContent = `機器人出了【${MOVE_INFO[botMove].name}】`;
+
+      pOrb.classList.remove("animate-clash");
+      bOrb.classList.remove("animate-clash");
+      void pOrb.offsetWidth;
+      pOrb.classList.add("animate-clash");
+      bOrb.classList.add("animate-clash");
+
+      const badge = document.getElementById("round-outcome-badge");
+      const sub = document.getElementById("round-outcome-sub");
+      if (outcome === "player") {
+        badge.textContent = `你獲勝 +${playerGainWins} 勝！`;
+        badge.className = "px-4 py-2 rounded-2xl bg-emerald-500/25 border border-emerald-400/50 text-xs sm:text-base font-black text-emerald-300";
+        sub.textContent = `目前 ${appState.playerWinStreak} 連勝中`;
+      } else if (outcome === "bot") {
+        badge.textContent = botGainWins > 0 ? `對手獲勝 +${botGainWins} 勝` : "護心鏡抵銷！";
+        badge.className = "px-4 py-2 rounded-2xl bg-rose-500/25 border border-rose-400/50 text-xs sm:text-base font-black text-rose-300";
+        sub.textContent = `目前 ${appState.playerLoseStreak} 連敗`;
+      } else {
+        badge.textContent = "雙方平手 (0分)";
+        badge.className = "px-4 py-2 rounded-2xl bg-amber-500/25 border border-amber-400/50 text-xs sm:text-base font-black text-amber-300";
+        sub.textContent = "一般平手不加分，連敗已歸零";
+      }
+
+      roundLogs.reverse().forEach(line => addCombatLog(line, outcome));
+
+      // ==================== 階段三：任一方取得 5 勝，對決立即結束！ ====================
+      if (appState.playerWins >= 5 || appState.botWins >= 5) {
+        appState.matchOver = true;
+        const playerIsChampion = appState.playerWins >= 5;
+        const bot = BOT_TIERS.find(b => b.id === appState.selectedBotId);
+
+        const overPanel = document.getElementById("match-over-panel");
+        const overIcon = document.getElementById("match-over-icon");
+        const overTitle = document.getElementById("match-over-title");
+        const overReward = document.getElementById("match-over-reward");
+
+        document.getElementById("rps-action-buttons").classList.add("opacity-40", "pointer-events-none");
+        overPanel.classList.remove("hidden");
+
+        if (playerIsChampion) {
+          appState.coins += bot.winCoins;
+          appState.gems += bot.winGems;
+          overIcon.textContent = "🏆";
+          overTitle.textContent = `你率先取得 ${appState.playerWins} 勝！對決立即結束並獲勝！`;
+          overTitle.className = "text-2xl sm:text-3xl font-black text-amber-300";
+          overReward.textContent = `擊敗【${bot.level} ${bot.name}】獲得獎勵：+${bot.winCoins} 對戰金幣、+${bot.winGems} 星界晶石！`;
+          addCombatLog(`🏆【對決立即結束】你已取得 ${appState.playerWins} 勝！獲得 +${bot.winCoins} 金幣與 +${bot.winGems} 星晶！`, "win");
+          showToast(`恭喜取得 5 勝！獲得 +${bot.winCoins} 金幣與 +${bot.winGems} 星晶！`, "success");
+        } else {
+          const consolationCoins = 60;
+          appState.coins += consolationCoins;
+          overIcon.textContent = "🤖";
+          overTitle.textContent = `機器人率先取得 ${appState.botWins} 勝，對決立即結束！`;
+          overTitle.className = "text-2xl sm:text-3xl font-black text-rose-300";
+          overReward.textContent = `雖敗猶榮！獲得參賽鼓勵金：+${consolationCoins} 對戰金幣，調整裝備與卡牌再戰一場吧！`;
+          addCombatLog(`💥【對決立即結束】${bot.name} 已取得 ${appState.botWins} 勝，本局結束。`, "lose");
+        }
+
+        updateCurrencyUI();
+        renderArenaScoreboard();
+        return;
+      }
+
+      appState.round += 1;
+      if (appState.handCards.length < 4) {
+        const ownedPool = Object.keys(appState.ownedCards);
+        const nextCard = ownedPool.length > 0
+          ? ownedPool[Math.floor(Math.random() * ownedPool.length)]
+          : CARDS_DB[Math.floor(Math.random() * CARDS_DB.length)].id;
+        appState.handCards.push(nextCard);
+      }
+
+      prepareRoundPriorityEffects();
+      renderArenaAll();
+    }
+
+    function addCombatLog(text, type = "info") {
+      appState.combatLogs.unshift({ text, type, time: new Date().toLocaleTimeString("zh-TW", { hour12: false }) });
+      if (appState.combatLogs.length > 35) appState.combatLogs.pop();
+      renderArenaCombatLog();
+    }
+
+    /* =========================================================================
+       8. 渲染競技場所有 UI 組件
+       ========================================================================= */
+    function renderArenaAll() {
+      renderBotTierSelector();
+      renderArenaScoreboard();
+      renderArenaEquipSlots();
+      renderArenaHandCards();
+      renderArenaCombatLog();
+    }
+
+    function renderBotTierSelector() {
+      const container = document.getElementById("bot-tier-selector");
+      if (!container) return;
+      container.innerHTML = BOT_TIERS.map(bot => {
+        const isSelected = bot.id === appState.selectedBotId;
+        return `
+          <button
+            onclick="selectBotTier('${bot.id}')"
+            class="text-left p-4 rounded-2xl border-2 transition-all ${
+              isSelected
+                ? "border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40 shadow-md"
+                : "border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 hover:border-indigo-400"
+            }"
+          >
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <span class="px-2.5 py-0.5 rounded-lg bg-gradient-to-r ${bot.badgeColor} text-white text-[11px] font-black">${bot.level}</span>
+              <span class="text-[11px] font-black text-amber-600 dark:text-amber-400">+${bot.winCoins} 金幣 / +${bot.winGems} 晶</span>
+            </div>
+            <div class="font-black text-sm text-slate-900 dark:text-white">${bot.name}</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">${bot.desc}</div>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function renderArenaScoreboard() {
+      const bot = BOT_TIERS.find(b => b.id === appState.selectedBotId) || BOT_TIERS[0];
+      document.getElementById("arena-bot-name-badge").textContent = `${bot.level} ${bot.name}`;
+      document.getElementById("arena-round-number").textContent = appState.round;
+      document.getElementById("player-wins-text").textContent = Math.min(5, appState.playerWins);
+      document.getElementById("bot-wins-text").textContent = Math.min(5, appState.botWins);
+
+      const pPips = document.getElementById("player-win-pips");
+      const bPips = document.getElementById("bot-win-pips");
+      pPips.innerHTML = Array.from({ length: 5 }, (_, i) =>
+        `<span class="w-5 h-2.5 rounded-full transition-all ${i < appState.playerWins ? "bg-sky-400 shadow-[0_0_10px_#38bdf8]" : "bg-white/15"}"></span>`
+      ).join("");
+      bPips.innerHTML = Array.from({ length: 5 }, (_, i) =>
+        `<span class="w-5 h-2.5 rounded-full transition-all ${i < appState.botWins ? "bg-rose-400 shadow-[0_0_10px_#fb7185]" : "bg-white/15"}"></span>`
+      ).join("");
+
+      const pWinS = document.getElementById("player-streak-badge");
+      const pLoseS = document.getElementById("player-lose-streak-badge");
+      pWinS.classList.toggle("hidden", appState.playerWinStreak === 0);
+      pWinS.textContent = `連勝 x${appState.playerWinStreak}`;
+      pLoseS.classList.toggle("hidden", appState.playerLoseStreak === 0);
+      pLoseS.textContent = `連敗 x${appState.playerLoseStreak}`;
+
+      const bWinS = document.getElementById("bot-streak-badge");
+      const bLoseS = document.getElementById("bot-lose-streak-badge");
+      bWinS.classList.toggle("hidden", appState.botWinStreak === 0);
+      bWinS.textContent = `連勝 x${appState.botWinStreak}`;
+      bLoseS.classList.toggle("hidden", appState.botLoseStreak === 0);
+      bLoseS.textContent = `連敗 x${appState.botLoseStreak}`;
+    }
+
+    function renderArenaEquipSlots() {
+      const slotsEl = document.getElementById("arena-equipped-slots");
+      const ownedEl = document.getElementById("arena-owned-equip-list");
+      if (!slotsEl || !ownedEl) return;
+
+      slotsEl.innerHTML = [0, 1].map(slotIdx => {
+        const eqId = appState.equippedItems[slotIdx];
+        if (!eqId) {
+          return `
+            <div class="p-3.5 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-center text-xs font-bold text-slate-400">
+              裝備槽 ${slotIdx + 1}：空置中（點擊下方已擁有裝備穿戴）
+            </div>
+          `;
+        }
+        const eq = EQUIPMENT_DB.find(e => e.id === eqId);
+        return `
+          <div class="p-3.5 rounded-2xl bg-gradient-to-r from-indigo-500/10 to-amber-500/10 border border-indigo-400/40 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+              <span class="text-2xl">${eq.icon}</span>
+              <div>
+                <div class="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span>${eq.name}</span>
+                  <span class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-600 dark:text-amber-300 text-[10px]">${eq.rarity}</span>
+                </div>
+                <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">${eq.shortDesc}</div>
+              </div>
+            </div>
+            <button onclick="toggleEquipItem('${eq.id}')" class="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-rose-500 hover:bg-rose-500 hover:text-white transition shrink-0">
+              卸下
+            </button>
+          </div>
+        `;
+      }).join("");
+
+      ownedEl.innerHTML = appState.ownedEquipments.map(eqId => {
+        const eq = EQUIPMENT_DB.find(e => e.id === eqId);
+        const isEquipped = appState.equippedItems.includes(eqId);
+        return `
+          <button
+            onclick="toggleEquipItem('${eq.id}')"
+            class="px-3 py-1.5 rounded-xl text-xs font-black border transition flex items-center gap-1.5 ${
+              isEquipped
+                ? "bg-indigo-600 text-white border-indigo-500 shadow-sm"
+                : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-indigo-500"
+            }"
+          >
+            <span>${eq.icon}</span>
+            <span>${eq.name}</span>
+            ${isEquipped ? '<i class="fa-solid fa-check text-[10px]"></i>' : ""}
+          </button>
+        `;
+      }).join("");
+    }
+
+    function renderArenaHandCards() {
+      const container = document.getElementById("arena-hand-cards");
+      const indicator = document.getElementById("selected-card-indicator");
+      if (!container) return;
+
+      if (appState.selectedCardId !== null && appState.handCards[appState.selectedCardId]) {
+        const c = CARDS_DB.find(x => x.id === appState.handCards[appState.selectedCardId]);
+        indicator.textContent = `【${c.name}】— ${c.desc}`;
+      } else {
+        indicator.textContent = "無（純粹出拳）";
+      }
+
+      if (appState.handCards.length === 0) {
+        container.innerHTML = `<div class="col-span-full py-6 text-center text-xs text-slate-400 font-bold">目前手牌已全數打出，可點擊右上角補充手牌或直接出拳！</div>`;
+        return;
+      }
+
+      container.innerHTML = appState.handCards.map((cId, idx) => {
+        const c = CARDS_DB.find(x => x.id === cId);
+        const isSelected = appState.selectedCardId === idx;
+        return `
+          <button
+            onclick="toggleSelectHandCard(${idx})"
+            class="fwa-card text-left p-4 rounded-2xl transition-all rarity-${c.rarity} ${
+              isSelected
+                ? "bg-indigo-600 text-white ring-4 ring-indigo-400/50"
+                : "bg-slate-50 dark:bg-slate-800/90 text-slate-900 dark:text-white"
+            }"
+          >
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-2xl">${c.icon}</span>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-black ${
+                isSelected ? "bg-white/25 text-white" : "bg-indigo-500/15 text-indigo-600 dark:text-sky-300"
+              }">${c.rarity} · ${c.type}</span>
+            </div>
+            <div class="font-black text-sm">${c.name}</div>
+            <p class="text-[11px] mt-1 leading-relaxed ${isSelected ? "text-white/90" : "text-slate-500 dark:text-slate-400"}">${c.desc}</p>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function renderArenaCombatLog() {
+      const box = document.getElementById("arena-combat-log");
+      if (!box) return;
+      box.innerHTML = appState.combatLogs.map(entry => {
+        const colorClass = {
+          win: "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300",
+          lose: "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300",
+          tie: "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300",
+          system: "bg-indigo-500/10 border-indigo-500/30 text-indigo-700 dark:text-indigo-300"
+        }[entry.type] || "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300";
+
+        return `
+          <div class="p-2.5 rounded-xl border ${colorClass}">
+            <div class="text-[10px] opacity-60 font-mono mb-0.5">${entry.time}</div>
+            <div class="font-bold">${entry.text}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    /* =========================================================================
+       9. 抽卡祭壇 (Gacha Summon System)
+       ========================================================================= */
+    function pullGacha(times = 1) {
+      const cost = times === 10 ? 900 : 100;
+      if (appState.gems < cost) {
+        showToast(`星界晶石不足 ${cost} 顆！可至商店用金幣兌換或贏得對戰！`, "info");
+        return;
+      }
+
+      appState.gems -= cost;
+      updateCurrencyUI();
+      playGameTone("win");
+
+      const pulled = [];
+      for (let i = 0; i < times; i++) {
+        const roll = Math.random() * 100;
+        let rarity = "N";
+        if (roll < 8) rarity = "SSR";
+        else if (roll < 32) rarity = "SR";
+        else if (roll < 75) rarity = "R";
+
+        if (times === 10 && i === 9 && !pulled.some(p => p.rarity === "SR" || p.rarity === "SSR")) {
+          rarity = "SR";
+        }
+
+        const candidates = CARDS_DB.filter(c => c.rarity === rarity);
+        const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+        const isNew = !appState.ownedCards[chosen.id];
+
+        appState.ownedCards[chosen.id] = (appState.ownedCards[chosen.id] || 0) + 1;
+        pulled.push({ ...chosen, isNew });
+      }
+
+      const grid = document.getElementById("gacha-cards-grid");
+      grid.innerHTML = pulled.map(c => `
+        <div class="fwa-card bg-slate-50 dark:bg-slate-800/90 p-4 rounded-2xl rarity-${c.rarity} animate-fwa-view flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-indigo-600 text-white">${c.rarity}</span>
+              ${c.isNew
+                ? '<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-500 text-white">NEW!</span>'
+                : '<span class="text-[10px] font-bold text-slate-400">已持有 +1</span>'}
+            </div>
+            <div class="text-4xl my-3 text-center">${c.icon}</div>
+            <div class="font-black text-base text-center text-slate-900 dark:text-white">${c.name}</div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">${c.desc}</p>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-200/70 dark:border-slate-700 text-center text-[11px] font-bold text-indigo-600 dark:text-sky-400">
+            目前持有數量：x${appState.ownedCards[c.id]}
+          </div>
+        </div>
+      `).join("");
+
+      showToast(`召喚完成！獲得 ${times} 張策略卡牌並已收納至圖鑑目錄！`, "success");
+    }
+
+    /* =========================================================================
+       10. 道具與裝備商店 (Shop System)
+       ========================================================================= */
+    function renderShopView() {
+      updateCurrencyUI();
+
+      const eqGrid = document.getElementById("shop-equipment-grid");
+      eqGrid.innerHTML = EQUIPMENT_DB.map(eq => {
+        const isOwned = appState.ownedEquipments.includes(eq.id);
+        return `
+          <div class="fwa-card bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-lg rarity-${eq.rarity} flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-300 text-xs font-black">${eq.rarity} 級優先裝備</span>
+                <span class="text-[11px] font-bold text-indigo-600 dark:text-sky-400">${eq.priorityTag}</span>
+              </div>
+              <div class="flex items-center gap-3.5 mb-3">
+                <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-3xl shrink-0">${eq.icon}</div>
+                <div>
+                  <h3 class="text-lg font-black text-slate-900 dark:text-white">${eq.name}</h3>
+                  <div class="text-xs font-bold text-amber-600 dark:text-amber-400 mt-0.5"><i class="fa-solid fa-coins mr-1"></i>${eq.priceCoins} 金幣</div>
+                </div>
+              </div>
+              <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">${eq.fullDesc}</p>
+            </div>
+
+            <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+              ${isOwned ? `
+                <button disabled class="w-full py-3 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-black text-xs sm:text-sm cursor-default">
+                  <i class="fa-solid fa-circle-check mr-1"></i> 已擁有此裝備（可至競技場穿戴）
+                </button>
+              ` : `
+                <button onclick="buyEquipment('${eq.id}')" class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:brightness-110 text-white font-black text-xs sm:text-sm shadow-md transition">
+                  <i class="fa-solid fa-cart-shopping mr-1"></i> 花費 ${eq.priceCoins} 金幣購買
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      const bundles = [
+        {
+          id: "bundle-gems",
+          title: "星界晶石補給箱（+500 星晶）",
+          priceText: "400 對戰金幣",
+          icon: "💎",
+          desc: "將對戰贏得的金幣兌換為 500 顆星界晶石，立即前往抽卡祭壇進行召喚！",
+          action: "buyBundle('gems')"
+        },
+        {
+          id: "bundle-sr-pack",
+          title: "隨機 SR/SSR 高階策略卡包",
+          priceText: "550 對戰金幣",
+          icon: "🎴",
+          desc: "直接開啟一包高階戰術卡包，100% 獲得一張 SR 或 SSR 稀有策略卡牌！",
+          action: "buyBundle('sr_pack')"
+        },
+        {
+          id: "bundle-starter-kit",
+          title: "全能挑戰者雙重禮包",
+          priceText: "700 對戰金幣",
+          icon: "🎁",
+          desc: "內含 600 顆星界晶石 ＋ 2 張隨機稀有策略卡牌，快速擴充你的牌庫！",
+          action: "buyBundle('combo')"
+        }
+      ];
+
+      document.getElementById("shop-bundles-grid").innerHTML = bundles.map(b => `
+        <div class="fwa-card bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-lg border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="text-4xl mb-3">${b.icon}</div>
+            <h3 class="text-lg font-black text-slate-900 dark:text-white">${b.title}</h3>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">${b.desc}</p>
+          </div>
+          <button onclick="${b.action}" class="mt-5 w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs sm:text-sm shadow-md transition">
+            兌換（${b.priceText}）
+          </button>
+        </div>
+      `).join("");
+    }
+
+    function buyEquipment(equipId) {
+      const eq = EQUIPMENT_DB.find(e => e.id === equipId);
+      if (!eq || appState.ownedEquipments.includes(equipId)) return;
+      if (appState.coins < eq.priceCoins) {
+        showToast(`對戰金幣不足 ${eq.priceCoins} 枚！快去競技場贏得勝利吧！`, "info");
+        return;
+      }
+
+      appState.coins -= eq.priceCoins;
+      appState.ownedEquipments.push(equipId);
+      if (appState.equippedItems.length < 2) {
+        appState.equippedItems.push(equipId);
+      }
+
+      playGameTone("win");
+      updateCurrencyUI();
+      renderShopView();
+      showToast(`成功購買優先裝備「${eq.name}」！已收納至圖鑑與背包！`, "success");
+    }
+
+    function buyBundle(type) {
+      if (type === "gems") {
+        if (appState.coins < 400) { showToast("對戰金幣不足 400 枚！", "info"); return; }
+        appState.coins -= 400;
+        appState.gems += 500;
+        playGameTone("win");
+        showToast("兌換成功！獲得 +500 顆星界晶石！", "success");
+      } else if (type === "sr_pack") {
+        if (appState.coins < 550) { showToast("對戰金幣不足 550 枚！", "info"); return; }
+        appState.coins -= 550;
+        const highCards = CARDS_DB.filter(c => c.rarity === "SR" || c.rarity === "SSR");
+        const picked = highCards[Math.floor(Math.random() * highCards.length)];
+        appState.ownedCards[picked.id] = (appState.ownedCards[picked.id] || 0) + 1;
+        playGameTone("win");
+        showToast(`開啟卡包獲得【${picked.rarity}】${picked.name}！`, "success");
+      } else if (type === "combo") {
+        if (appState.coins < 700) { showToast("對戰金幣不足 700 枚！", "info"); return; }
+        appState.coins -= 700;
+        appState.gems += 600;
+        for (let i = 0; i < 2; i++) {
+          const picked = CARDS_DB[Math.floor(Math.random() * CARDS_DB.length)];
+          appState.ownedCards[picked.id] = (appState.ownedCards[picked.id] || 0) + 1;
+        }
+        playGameTone("win");
+        showToast("雙重禮包兌換成功！獲得 +600 星晶與 2 張策略卡牌！", "success");
+      }
+      updateCurrencyUI();
+    }
+
+    /* =========================================================================
+       11. 遊戲規則與圖鑑目錄 (Rules & Owned/All Directory)
+       ========================================================================= */
+    function setCodexFilter(filterType) {
+      appState.codexFilter = filterType;
+      renderCodexView();
+    }
+
+    function renderCodexView() {
+      document.querySelectorAll(".codex-filter-btn").forEach(btn => {
+        const active = btn.getAttribute("data-codex-filter") === appState.codexFilter;
+        btn.className = `codex-filter-btn px-4 py-2 rounded-xl text-xs font-black transition ${
+          active
+            ? "bg-indigo-600 text-white shadow-sm"
+            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+        }`;
+      });
+
+      const ownedEquipCount = appState.ownedEquipments.length;
+      const ownedCardTypesCount = Object.keys(appState.ownedCards).filter(k => appState.ownedCards[k] > 0).length;
+      const totalItems = EQUIPMENT_DB.length + CARDS_DB.length;
+      const totalOwned = ownedEquipCount + ownedCardTypesCount;
+
+      document.getElementById("codex-progress-summary").textContent =
+        `目前已獲得：${totalOwned} / ${totalItems} 項全圖鑑（優先裝備 ${ownedEquipCount}/${EQUIPMENT_DB.length} 件 · 策略卡牌 ${ownedCardTypesCount}/${CARDS_DB.length} 種）`;
+
+      const filteredEquips = EQUIPMENT_DB.filter(eq => {
+        const isOwned = appState.ownedEquipments.includes(eq.id);
+        if (appState.codexFilter === "owned") return isOwned;
+        if (appState.codexFilter === "unowned") return !isOwned;
+        return true;
+      });
+
+      document.getElementById("codex-equipment-grid").innerHTML = filteredEquips.length === 0
+        ? `<div class="col-span-full py-6 text-center text-xs text-slate-400 font-bold">此篩選條件下無對應裝備</div>`
+        : filteredEquips.map(eq => {
+            const isOwned = appState.ownedEquipments.includes(eq.id);
+            return `
+              <div class="fwa-card p-5 rounded-2xl rarity-${eq.rarity} ${isOwned ? "bg-slate-50 dark:bg-slate-800/90" : "bg-slate-100/60 dark:bg-slate-900/50 opacity-70"}">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-300 text-[10px] font-black">${eq.rarity} · ${eq.priorityTag}</span>
+                  ${isOwned
+                    ? '<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-black">✅ 已獲得</span>'
+                    : '<span class="px-2.5 py-0.5 rounded-full bg-slate-500/20 text-slate-500 text-[11px] font-black">🔒 未獲得</span>'}
+                </div>
+                <div class="flex items-center gap-3 my-2">
+                  <span class="text-3xl">${eq.icon}</span>
+                  <div class="font-black text-base text-slate-900 dark:text-white">${eq.name}</div>
+                </div>
+                <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">${eq.fullDesc}</p>
+              </div>
+            `;
+          }).join("");
+
+      const filteredCards = CARDS_DB.filter(c => {
+        const count = appState.ownedCards[c.id] || 0;
+        if (appState.codexFilter === "owned") return count > 0;
+        if (appState.codexFilter === "unowned") return count === 0;
+        return true;
+      });
+
+      document.getElementById("codex-cards-grid").innerHTML = filteredCards.length === 0
+        ? `<div class="col-span-full py-6 text-center text-xs text-slate-400 font-bold">此篩選條件下無對應卡牌</div>`
+        : filteredCards.map(c => {
+            const count = appState.ownedCards[c.id] || 0;
+            const isOwned = count > 0;
+            return `
+              <div class="fwa-card p-4 rounded-2xl rarity-${c.rarity} flex flex-col justify-between ${isOwned ? "bg-slate-50 dark:bg-slate-800/90" : "bg-slate-100/60 dark:bg-slate-900/50 opacity-70"}">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-600 dark:text-sky-300 text-[10px] font-black">${c.rarity}</span>
+                    ${isOwned
+                      ? `<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-black">持有 x${count}</span>`
+                      : '<span class="px-2 py-0.5 rounded-full bg-slate-500/20 text-slate-500 text-[11px] font-black">未獲得</span>'}
+                  </div>
+                  <div class="text-3xl text-center my-2.5">${c.icon}</div>
+                  <div class="font-black text-sm text-center text-slate-900 dark:text-white">${c.name}</div>
+                  <div class="text-[10px] text-center text-purple-500 font-bold mt-0.5">${c.type}</div>
+                  <p class="text-[11px] text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">${c.desc}</p>
+                </div>
+              </div>
+            `;
+          }).join("");
+    }
+
+    /* =========================================================================
+       12. 會員登入／註冊系統（Google & GitHub / 嚴格密碼規則 / 機器人驗證 / 6位數Email驗證碼）
+       ========================================================================= */
+    function openAuthModal(mode = "login") {
+      clearAuthError();
+      switchAuthMode(mode);
+      generateHumanCaptcha();
+      document.getElementById("auth-modal").classList.remove("hidden");
+    }
+
+    function closeAuthModal() {
+      document.getElementById("auth-modal").classList.add("hidden");
+    }
+
+    function showAuthError(msg) {
+      const box = document.getElementById("auth-error-box");
+      box.textContent = msg;
+      box.classList.remove("hidden");
+    }
+
+    function clearAuthError() {
+      const box = document.getElementById("auth-error-box");
+      box.classList.add("hidden");
+      box.textContent = "";
+    }
+
+    function switchAuthMode(mode) {
+      clearAuthError();
+      const loginForm = document.getElementById("auth-login-form");
+      const regForm = document.getElementById("auth-register-form");
+      const verifyForm = document.getElementById("auth-verify-form");
+      const tabsBar = document.getElementById("auth-tabs-bar");
+      const oauthSec = document.getElementById("oauth-buttons-section");
+      const titleEl = document.getElementById("auth-modal-title");
+
+      const btnLogin = document.getElementById("tab-btn-login");
+      const btnReg = document.getElementById("tab-btn-register");
+
+      loginForm.classList.add("hidden");
+      regForm.classList.add("hidden");
+      verifyForm.classList.add("hidden");
+
+      if (mode === "login") {
+        titleEl.textContent = "登入星界猜拳對決";
+        tabsBar.classList.remove("hidden");
+        oauthSec.classList.remove("hidden");
+        loginForm.classList.remove("hidden");
+        btnLogin.className = "py-2 rounded-xl text-sm font-black transition bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm";
+        btnReg.className = "py-2 rounded-xl text-sm font-black transition text-slate-500 dark:text-slate-400";
+      } else if (mode === "register") {
+        titleEl.textContent = "註冊新挑戰者帳號";
+        tabsBar.classList.remove("hidden");
+        oauthSec.classList.remove("hidden");
+        regForm.classList.remove("hidden");
+        generateHumanCaptcha();
+        btnReg.className = "py-2 rounded-xl text-sm font-black transition bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm";
+        btnLogin.className = "py-2 rounded-xl text-sm font-black transition text-slate-500 dark:text-slate-400";
+      } else if (mode === "verify") {
+        titleEl.textContent = "Email 6 位數安全驗證";
+        tabsBar.classList.add("hidden");
+        oauthSec.classList.add("hidden");
+        verifyForm.classList.remove("hidden");
+      }
+    }
+
+    function generateHumanCaptcha() {
+      const a = Math.floor(Math.random() * 18) + 4;
+      const b = Math.floor(Math.random() * 15) + 3;
+      appState.captchaAnswer = a + b;
+      const box = document.getElementById("captcha-question-box");
+      if (box) box.textContent = `${a} + ${b} = ?`;
+      const input = document.getElementById("reg-captcha-input");
+      if (input) input.value = "";
+    }
+
+    function validatePasswordRule(pw) {
+      const hasMinLen = pw.length >= 8;
+      const hasUpper = /[A-Z]/.test(pw);
+      const hasLower = /[a-z]/.test(pw);
+      const onlyAllowedChars = /^[A-Za-z0-9@_?/']+$/.test(pw);
+      return {
+        valid: hasMinLen && hasUpper && hasLower && onlyAllowedChars,
+        hasMinLen,
+        hasUpper,
+        hasLower,
+        onlyAllowedChars
+      };
+    }
+
+    function validatePasswordLive(pw) {
+      const res = validatePasswordRule(pw);
+      const rLen = document.getElementById("pw-rule-len");
+      const rCase = document.getElementById("pw-rule-case");
+      const rSpec = document.getElementById("pw-rule-special");
+      if (rLen) rLen.className = res.hasMinLen ? "text-emerald-500 font-bold" : "text-slate-500 dark:text-slate-400";
+      if (rCase) rCase.className = (res.hasUpper && res.hasLower) ? "text-emerald-500 font-bold" : "text-slate-500 dark:text-slate-400";
+      if (rSpec) rSpec.className = (pw.length > 0 && res.onlyAllowedChars) ? "text-emerald-500 font-bold" : (pw.length > 0 ? "text-rose-500 font-bold" : "text-slate-500 dark:text-slate-400");
+    }
+
+    function handleRegisterSubmit(event) {
+      event.preventDefault();
+      clearAuthError();
+
+      const email = document.getElementById("reg-email").value.trim().toLowerCase();
+      const lastName = document.getElementById("reg-lastname").value.trim();
+      const firstName = document.getElementById("reg-firstname").value.trim();
+      const gender = document.getElementById("reg-gender").value;
+      const password = document.getElementById("reg-password").value;
+      const confirmPassword = document.getElementById("reg-confirm-password").value;
+      const captchaVal = parseInt(document.getElementById("reg-captcha-input").value, 10);
+
+      if (!firstName) {
+        showAuthError("請填寫「名」欄位！");
+        return;
+      }
+      if (appState.usersDB.some(u => u.email.toLowerCase() === email)) {
+        showAuthError("此 Email 已經註冊過了，請直接切換至「會員登入」！");
+        return;
+      }
+
+      const pwCheck = validatePasswordRule(password);
+      if (!pwCheck.hasMinLen) {
+        showAuthError("密碼長度不足：需要至少 8 位數！");
+        return;
+      }
+      if (!pwCheck.hasUpper || !pwCheck.hasLower) {
+        showAuthError("密碼強度不足：必須包含至少 1 個大寫英文字母與 1 個小寫英文字母！");
+        return;
+      }
+      if (!pwCheck.onlyAllowedChars) {
+        showAuthError("密碼包含不允許的特殊字元！僅接受 @ _ ? / ' 這五種特殊符號。");
+        return;
+      }
+      if (password !== confirmPassword) {
+        showAuthError("兩次輸入的密碼不一致，請重新確認！");
+        return;
+      }
+      if (captchaVal !== appState.captchaAnswer) {
+        showAuthError("機器人驗證算術答案不正確，請重新計算！");
+        generateHumanCaptcha();
+        return;
+      }
+
+      const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+      appState.pendingRegistration = { email, lastName, firstName, gender, password, otpCode };
+
+      document.getElementById("verify-target-email").textContent = email;
+      document.getElementById("simulated-otp-display").textContent = otpCode;
+      document.getElementById("verify-otp-input").value = "";
+      switchAuthMode("verify");
+      showToast(`已發送 6 位數驗證碼至 ${email}！`, "success");
+    }
+
+    function handleVerifyEmailCode(event) {
+      event.preventDefault();
+      clearAuthError();
+      if (!appState.pendingRegistration) return;
+
+      const inputOtp = document.getElementById("verify-otp-input").value.trim();
+      if (inputOtp !== appState.pendingRegistration.otpCode) {
+        showAuthError("6 位數驗證碼輸入錯誤，請核對上方信箱驗證碼！");
+        return;
+      }
+
+      const p = appState.pendingRegistration;
+      const newUser = {
+        id: `USR-${String(appState.usersDB.length + 1).padStart(3, "0")}`,
+        email: p.email,
+        lastName: p.lastName,
+        firstName: p.firstName,
+        gender: p.gender,
+        provider: "Email",
+        password: p.password,
+        verified: true,
+        role: "一般",
+        createdAt: new Date().toLocaleString("zh-TW", { hour12: false })
+      };
+
+      appState.usersDB.push(newUser);
+      saveCurrentUserSession(newUser);
+      appState.pendingRegistration = null;
+
+      closeAuthModal();
+      showToast(`信箱驗證成功！歡迎加入，${newUser.lastName}${newUser.firstName}！`, "success");
+    }
+
+    function handleLoginSubmit(event) {
+      event.preventDefault();
+      clearAuthError();
+
+      const email = document.getElementById("login-email").value.trim().toLowerCase();
+      const password = document.getElementById("login-password").value;
+
+      const user = appState.usersDB.find(u => u.email.toLowerCase() === email && u.password === password);
+      if (!user) {
+        showAuthError("帳號或密碼錯誤！若尚未註冊請切換至「註冊新帳號」。");
+        return;
+      }
+
+      saveCurrentUserSession(user);
+      closeAuthModal();
+      showToast(`歡迎回來，${user.lastName}${user.firstName}（權限：${user.role}）！`, "success");
+    }
+
+    function handleOAuthLogin(providerName) {
+      const demoEmail = providerName === "Google"
+        ? "google.challenger@gmail.com"
+        : "github.duelist@github.com";
+
+      let user = appState.usersDB.find(u => u.email === demoEmail);
+      if (!user) {
+        user = {
+          id: `USR-${String(appState.usersDB.length + 1).padStart(3, "0")}`,
+          email: demoEmail,
+          lastName: providerName === "Google" ? "谷" : "吉",
+          firstName: providerName === "Google" ? "歌決鬥者" : "哈指揮官",
+          gender: "不願透露",
+          provider: providerName,
+          password: "OAuthLogin1@",
+          verified: true,
+          role: "一般",
+          createdAt: new Date().toLocaleString("zh-TW", { hour12: false })
+        };
+        appState.usersDB.push(user);
+      }
+
+      saveCurrentUserSession(user);
+      closeAuthModal();
+      showToast(`已透過 ${providerName} 帳號成功登入（已自動記憶登入狀態）！`, "success");
+    }
+
+    function quickLoginAsOwner() {
+      const ownerUser = appState.usersDB.find(u => u.role === "擁有者") || appState.usersDB[0];
+      if (ownerUser) {
+        saveCurrentUserSession(ownerUser);
+        closeAuthModal();
+        showToast(`已登入「${ownerUser.role}」帳號！導覽列已解鎖「管理面板」`, "success");
+      }
+    }
+
+    function saveCurrentUserSession(userObj) {
+      appState.currentUser = userObj;
+      setSessionCookie(userObj ? userObj.email : null);
+      updateAuthUI();
+    }
+
+    function logoutUser() {
+      saveCurrentUserSession(null);
+      if (appState.activeTab === "admin") switchTab("arena");
+      showToast("您已安全登出帳號", "info");
+    }
+
+    function updateAuthUI() {
+      const area = document.getElementById("header-auth-area");
+      const navAdminBtn = document.getElementById("nav-admin-btn");
+      const mobileAdminBtn = document.getElementById("mobile-nav-admin-btn");
+
+      if (!appState.currentUser) {
+        area.innerHTML = `
+          <button
+            onclick="openAuthModal('login')"
+            class="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:brightness-110 text-white font-extrabold text-xs shadow-sm transition flex items-center gap-1.5"
+          >
+            <i class="fa-solid fa-user-astronaut"></i>
+            <span>登入 / 註冊</span>
+          </button>
+        `;
+        if (navAdminBtn) navAdminBtn.classList.add("hidden");
+        if (mobileAdminBtn) mobileAdminBtn.classList.add("hidden");
+        return;
+      }
+
+      const u = appState.currentUser;
+      const level = ROLE_LEVELS[u.role] || 1;
+      const isAdminOrAbove = level >= ROLE_LEVELS["管理員"];
+
+      if (navAdminBtn) navAdminBtn.classList.toggle("hidden", !isAdminOrAbove);
+      if (mobileAdminBtn) mobileAdminBtn.classList.toggle("hidden", !isAdminOrAbove);
+
+      const roleColors = {
+        "一般": "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200",
+        "管理員": "bg-sky-500/20 text-sky-600 dark:text-sky-300",
+        "開發者": "bg-indigo-500/20 text-indigo-600 dark:text-indigo-300",
+        "擁有者": "bg-amber-500/20 text-amber-600 dark:text-amber-300"
+      };
+
+      area.innerHTML = `
+        <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/90 px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+          <div class="text-right">
+            <div class="text-xs font-black text-slate-800 dark:text-white leading-tight">${u.lastName}${u.firstName}</div>
+            <span class="inline-block px-1.5 py-0.2 rounded text-[10px] font-black ${roleColors[u.role] || roleColors["一般"]}">${u.role}</span>
+          </div>
+          <button onclick="logoutUser()" title="登出帳號" class="w-8 h-8 rounded-xl bg-white dark:bg-slate-700 hover:bg-rose-500 hover:text-white text-slate-500 dark:text-slate-300 flex items-center justify-center transition">
+            <i class="fa-solid fa-right-from-bracket text-xs"></i>
+          </button>
+        </div>
+      `;
+    }
+
+    /* =========================================================================
+       13. 管理面板：用戶試算表查看 & 開發者以上權限調整
+       ========================================================================= */
+    function renderAdminPanel() {
+      const u = appState.currentUser;
+      const currentLevel = u ? (ROLE_LEVELS[u.role] || 1) : 0;
+      const canEditRoles = currentLevel >= ROLE_LEVELS["開發者"];
+
+      syncViewCounterUI();
+      document.getElementById("admin-stat-users").textContent = appState.usersDB.length;
+      const staffCount = appState.usersDB.filter(x => (ROLE_LEVELS[x.role] || 1) >= ROLE_LEVELS["管理員"]).length;
+      document.getElementById("admin-stat-staff").textContent = staffCount;
+      document.getElementById("admin-current-role-badge").textContent = u ? u.role : "未登入";
+
+      const hintEl = document.getElementById("admin-role-permission-hint");
+      if (canEditRoles) {
+        hintEl.textContent = "您具備「開發者」以上權限，可直接調整下方任何用戶的權限階級";
+        hintEl.className = "text-[11px] text-emerald-500 font-bold mt-1";
+      } else {
+        hintEl.textContent = "您目前為「管理員」，可查看所有用戶資料（需開發者以上方可修改權限）";
+        hintEl.className = "text-[11px] text-amber-500 font-bold mt-1";
+      }
+
+      const tbody = document.getElementById("admin-users-tbody");
+      tbody.innerHTML = appState.usersDB.map((row, idx) => {
+        const badgeClass = {
+          "一般": "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
+          "管理員": "bg-sky-500/15 text-sky-600 dark:text-sky-300",
+          "開發者": "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300",
+          "擁有者": "bg-amber-500/20 text-amber-600 dark:text-amber-300"
+        }[row.role] || "";
+
+        return `
+          <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
+            <td class="py-3.5 px-4 font-mono text-xs text-slate-400">${row.id || idx + 1}</td>
+            <td class="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-200">${row.email}</td>
+            <td class="py-3.5 px-4 text-slate-600 dark:text-slate-300">${row.lastName || "—"}</td>
+            <td class="py-3.5 px-4 font-bold text-slate-800 dark:text-white">${row.firstName}</td>
+            <td class="py-3.5 px-4 text-slate-600 dark:text-slate-300">${row.gender}</td>
+            <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-xs font-bold">${row.provider}</span></td>
+            <td class="py-3.5 px-4">
+              <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                <i class="fa-solid fa-check mr-0.5"></i>已驗證
+              </span>
+            </td>
+            <td class="py-3.5 px-4">
+              ${canEditRoles ? `
+                <select
+                  onchange="changeUserRole('${row.email}', this.value)"
+                  class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-black text-xs text-slate-800 dark:text-white outline-none focus:border-indigo-500"
+                >
+                  <option value="一般" ${row.role === "一般" ? "selected" : ""}>一般</option>
+                  <option value="管理員" ${row.role === "管理員" ? "selected" : ""}>管理員</option>
+                  <option value="開發者" ${row.role === "開發者" ? "selected" : ""}>開發者</option>
+                  <option value="擁有者" ${row.role === "擁有者" ? "selected" : ""}>擁有者</option>
+                </select>
+              ` : `
+                <span class="px-3 py-1 rounded-xl text-xs font-black ${badgeClass}">${row.role}</span>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function changeUserRole(targetEmail, newRole) {
+      const currentLevel = appState.currentUser ? (ROLE_LEVELS[appState.currentUser.role] || 1) : 0;
+      if (currentLevel < ROLE_LEVELS["開發者"]) {
+        showToast("權限不足：僅開發者以上可調整權限！", "info");
+        return;
+      }
+      const target = appState.usersDB.find(u => u.email === targetEmail);
+      if (target) {
+        target.role = newRole;
+        if (appState.currentUser && appState.currentUser.email === targetEmail) {
+          saveCurrentUserSession(target);
+        }
+        renderAdminPanel();
+        showToast(`已將 ${target.email} 的權限階級更新為「${newRole}」！`, "success");
+      }
+    }
+
+    function adminGrantTestResources() {
+      appState.coins += 1000;
+      appState.gems += 1000;
+      updateCurrencyUI();
+      showToast("已發放 +1,000 對戰金幣與 +1,000 星界晶石！", "success");
+    }
+
+    function exportUsersCSV() {
+      const headers = ["用戶編號", "Email", "姓", "名", "性別", "登入方式", "驗證狀態", "權限階級", "建立時間", "網站累計瀏覽次數"];
+      const rows = appState.usersDB.map((u, i) => [
+        u.id, u.email, u.lastName || "", u.firstName, u.gender, u.provider,
+        u.verified ? "已驗證" : "未驗證", u.role, u.createdAt, i === 0 ? appState.totalViews : ""
+      ]);
+      const csvContent = "\uFEFF" + [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `RPS_NEXUS_用戶與瀏覽試算表_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("已成功匯出用戶與瀏覽次數試算表 (CSV)！", "success");
+    }
+
+    /* =========================================================================
+       14. Three.js 3D 競技場能量粒子背景
+       ========================================================================= */
+    function initArena3DBackground() {
+      const canvas = document.getElementById("arena-3d-bg");
+      if (!canvas || typeof THREE === "undefined") return;
+
+      try {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / Math.max(1, canvas.clientHeight), 0.1, 100);
+        camera.position.z = 16;
+
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+        const torusGeo = new THREE.TorusKnotGeometry(4.2, 0.45, 90, 16);
+        const torusMat = new THREE.MeshBasicMaterial({ color: 0x6366f1, wireframe: true, transparent: true, opacity: 0.28 });
+        const torus = new THREE.Mesh(torusGeo, torusMat);
+        scene.add(torus);
+
+        const particleCount = 120;
+        const posArr = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount * 3; i++) {
+          posArr[i] = (Math.random() - 0.5) * 32;
+        }
+        const pGeo = new THREE.BufferGeometry();
+        pGeo.setAttribute("position", new THREE.BufferAttribute(posArr, 3));
+        const pMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.18, transparent: true, opacity: 0.7 });
+        const points = new THREE.Points(pGeo, pMat);
+        scene.add(points);
+
+        function animateArenaBg() {
+          requestAnimationFrame(animateArenaBg);
+          torus.rotation.x += 0.004;
+          torus.rotation.y += 0.006;
+          points.rotation.y -= 0.002;
+          renderer.render(scene, camera);
+        }
+        animateArenaBg();
+
+        window.addEventListener("resize", () => {
+          if (!canvas.parentElement) return;
+          const w = canvas.parentElement.clientWidth;
+          const h = canvas.parentElement.clientHeight;
+          if (w > 0 && h > 0) {
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+          }
+        });
+      } catch (e) {}
+    }
+
+    /* =========================================================================
+       15. Gemini AI 戰術軍師與遊戲客服（連接 gemini-3-flash-preview + 智慧戰術備援）
+       ========================================================================= */
+    function toggleAIChat(forceState) {
+      appState.aiChatOpen = typeof forceState === "boolean" ? forceState : !appState.aiChatOpen;
+      const win = document.getElementById("ai-chat-window");
+      if (appState.aiChatOpen) {
+        win.classList.remove("hidden");
+        document.getElementById("ai-chat-input").focus();
+      } else {
+        win.classList.add("hidden");
+      }
+    }
+
+    function sendQuickAIQuestion(q) {
+      document.getElementById("ai-chat-input").value = q;
+      handleAIChatSubmit(new Event("submit"));
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function appendChatMessage(role, text) {
+      const box = document.getElementById("ai-chat-messages");
+      const div = document.createElement("div");
+      if (role === "user") {
+        div.className = "flex items-start justify-end gap-2";
+        div.innerHTML = `<div class="bg-indigo-600 text-white p-3.5 rounded-2xl rounded-tr-none shadow-sm max-w-[82%] leading-relaxed">${escapeHTML(text)}</div>`;
+      } else {
+        const html = escapeHTML(text)
+          .replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-600 dark:text-sky-400">$1</strong>')
+          .replace(/\n/g, "<br/>");
+        div.className = "flex items-start gap-2.5";
+        div.innerHTML = `
+          <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-xs shrink-0 mt-0.5"><i class="fa-solid fa-sparkles"></i></div>
+          <div class="bg-white dark:bg-slate-800 p-3.5 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-200 max-w-[85%] leading-relaxed">${html}</div>
+        `;
+      }
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+      const box = document.getElementById("ai-chat-messages");
+      const div = document.createElement("div");
+      div.id = "ai-typing-indicator";
+      div.className = "flex items-start gap-2.5";
+      div.innerHTML = `
+        <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-xs shrink-0 mt-0.5"><i class="fa-solid fa-sparkles"></i></div>
+        <div class="bg-white dark:bg-slate-800 px-4 py-3 rounded-2xl rounded-tl-none border border-slate-100 dark:border-slate-700 flex gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-indigo-500 typing-dot"></span>
+          <span class="w-2 h-2 rounded-full bg-indigo-500 typing-dot"></span>
+          <span class="w-2 h-2 rounded-full bg-indigo-500 typing-dot"></span>
+        </div>
+      `;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+      const el = document.getElementById("ai-typing-indicator");
+      if (el) el.remove();
+    }
+
+    function generateSmartRPSCoachReply(userMsg) {
+      const msg = userMsg.toLowerCase();
+      if (msg.includes("幸運手套") || msg.includes("鏡像") || msg.includes("連擊")) {
+        return `**【幸運手套 × 鏡像複製必勝連擊解析】** 🧤✨\n\n` +
+          `1. **核心規則提醒**：裝備技能享有最高優先結算權，但**幸運手套不會跳過第 1 回合**（第 1 回合仍正常出拳與結算）。\n` +
+          `2. **神級連擊**：從 **第 2 回合起**，只要穿戴「幸運手套」並打出一張 **「鏡像複製」** 卡牌，你會強制複製機器人的出拳形成平手，接著幸運手套優先結算直接改判為 **你獲得 +1 勝**！幾乎無解！`;
+      }
+      if (msg.includes("魔王") || msg.includes("lv.4") || msg.includes("lv4") || msg.includes("攻略")) {
+        return `**【擊敗 Lv.4 終極超汐魔王 AI 頂尖配置】** 👑⚔️\n\n` +
+          `• **雙裝備推薦**：穿戴 **「先知透視鏡 (SSR)」** ＋ **「幸運手套 (SR)」**。\n` +
+          `• **戰術節奏**：第 1 回合利用透視鏡或封印卡穩住局面；第 2 回合起善用「鏡像複製」觸發幸運手套白嫖勝場；若對手聽牌 4 勝，打出 **「背水一戰」** 單回合直接 +3 勝逆轉帶走！`;
+      }
+      if (msg.includes("規則") || msg.includes("平手") || msg.includes("連敗")) {
+        return `**【四大核心對決規則速覽】** 📜\n\n` +
+          `1. **相同出拳即平手**：雙方最終出拳相同即為平手。\n` +
+          `2. **一般平手結算**：無特殊改判的平手雙方皆 **不加分 (+0)**，且雙方 **連敗數立即歸零**！\n` +
+          `3. **裝備優先結算**：所有裝備技能優先結算，且 **幸運手套不會跳過第 1 回合**。\n` +
+          `4. **搶 5 勝終局制**：任一方率先取得 **5 勝**，對決立即結束並結算獎勵！`;
+      }
+      return `收到您的戰術提問！⚔️ 目前您處於 **第 ${appState.round} 回合**（目前比數：你 **${appState.playerWins}** 勝 vs 對手 **${appState.botWins}** 勝）。\n\n` +
+        `建議您可以前往「道具裝備店」購買 **幸運手套 (450 金幣)** 與 **先知透視鏡 (780 金幣)**，並在「抽卡祭壇」召喚 SSR 卡牌，即可輕鬆打通所有等級機器人！`;
+    }
+
+    async function callGeminiAPI(userMessage) {
+      const apiKey = "";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+      const systemPrompt = `你是「RPS NEXUS｜星界猜拳對決」的專屬 Gemini AI 戰術軍師與遊戲客服。請使用熱情有活力的繁體中文回答。遊戲核心規則：1.雙方出拳相同就是平手。2.一般平手雙方不加分，且連敗歸零。3.裝備技能優先結算；幸運手套不會跳過第1回合。4.任一方取得5勝，對決立即結束。請提供精簡實用的對戰策略、裝備搭配或客服協助（約 150-250 字）。`;
+
+      const contents = [
+        ...appState.aiHistory.slice(-6),
+        { role: "user", parts: [{ text: userMessage }] }
+      ];
+
+      const delays = [1000, 2000];
+      for (let attempt = 0; attempt <= delays.length; attempt++) {
+        try {
+          const res = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents,
+              systemInstruction: { parts: [{ text: systemPrompt }] }
+            })
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (reply) {
+            appState.aiHistory.push({ role: "user", parts: [{ text: userMessage }] });
+            appState.aiHistory.push({ role: "model", parts: [{ text: reply }] });
+            return reply;
+          }
+          throw new Error("Empty Gemini response");
+        } catch (err) {
+          if (attempt < delays.length) {
+            await new Promise(r => setTimeout(r, delays[attempt]));
+          } else {
+            return generateSmartRPSCoachReply(userMessage);
+          }
+        }
+      }
+    }
+
+    async function handleAIChatSubmit(event) {
+      event.preventDefault();
+      const input = document.getElementById("ai-chat-input");
+      const btn = document.getElementById("ai-chat-send-btn");
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = "";
+      input.disabled = true;
+      btn.disabled = true;
+
+      appendChatMessage("user", text);
+      showTypingIndicator();
+
+      try {
+        const reply = await callGeminiAPI(text);
+        removeTypingIndicator();
+        appendChatMessage("model", reply);
+      } catch (e) {
+        removeTypingIndicator();
+        appendChatMessage("model", generateSmartRPSCoachReply(text));
+      } finally {
+        input.disabled = false;
+        btn.disabled = false;
+        input.focus();
+      }
+    }
+
+    /* =========================================================================
+       16. Toast 通知與至最頂端按鈕
+       ========================================================================= */
+    let toastTimer = null;
+    function showToast(msg, type = "success") {
+      const toast = document.getElementById("toast-notification");
+      const msgEl = document.getElementById("toast-message");
+      const iconEl = document.getElementById("toast-icon");
+      if (!toast || !msgEl) return;
+
+      msgEl.textContent = msg;
+      iconEl.className = type === "success"
+        ? "fa-solid fa-circle-check text-emerald-400"
+        : "fa-solid fa-circle-info text-sky-400";
+
+      toast.classList.remove("opacity-0", "-translate-y-3");
+      toast.classList.add("opacity-100", "translate-y-0");
+
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove("opacity-100", "translate-y-0");
+        toast.classList.add("opacity-0", "-translate-y-3");
+      }, 2800);
+    }
+
+    const scrollTopBtn = document.getElementById("scroll-to-top-btn");
+    window.addEventListener("scroll", () => {
+      if (!scrollTopBtn) return;
+      if (window.scrollY > 240) {
+        scrollTopBtn.classList.remove("opacity-0", "translate-y-4", "pointer-events-none");
+        scrollTopBtn.classList.add("opacity-100", "translate-y-0");
+      } else {
+        scrollTopBtn.classList.add("opacity-0", "translate-y-4", "pointer-events-none");
+        scrollTopBtn.classList.remove("opacity-100", "translate-y-0");
+      }
+    }, { passive: true });
+
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    /* =========================================================================
+       17. 明確綁定所有全域函式至 window
+       ========================================================================= */
+    window.switchTab = switchTab;
+    window.toggleDarkMode = toggleDarkMode;
+    window.toggleSound = toggleSound;
+    window.selectBotTier = selectBotTier;
+    window.startNewMatch = startNewMatch;
+    window.playRPSRound = playRPSRound;
+    window.drawBonusHandCard = drawBonusHandCard;
+    window.toggleSelectHandCard = toggleSelectHandCard;
+    window.toggleEquipItem = toggleEquipItem;
+    window.pullGacha = pullGacha;
+    window.buyEquipment = buyEquipment;
+    window.buyBundle = buyBundle;
+    window.setCodexFilter = setCodexFilter;
+    window.openAuthModal = openAuthModal;
+    window.closeAuthModal = closeAuthModal;
+    window.switchAuthMode = switchAuthMode;
+    window.generateHumanCaptcha = generateHumanCaptcha;
+    window.validatePasswordLive = validatePasswordLive;
+    window.handleRegisterSubmit = handleRegisterSubmit;
+    window.handleVerifyEmailCode = handleVerifyEmailCode;
+    window.handleLoginSubmit = handleLoginSubmit;
+    window.handleOAuthLogin = handleOAuthLogin;
+    window.quickLoginAsOwner = quickLoginAsOwner;
+    window.logoutUser = logoutUser;
+    window.changeUserRole = changeUserRole;
+    window.adminGrantTestResources = adminGrantTestResources;
+    window.exportUsersCSV = exportUsersCSV;
+    window.toggleAIChat = toggleAIChat;
+    window.sendQuickAIQuestion = sendQuickAIQuestion;
+    window.handleAIChatSubmit = handleAIChatSubmit;
+    window.scrollToTop = scrollToTop;
+
+    /* =========================================================================
+       18. 啟動應用程式
+       ========================================================================= */
+    window.addEventListener("DOMContentLoaded", () => {
+      initSystemCountersAndSession();
+      updateAuthUI();
+      initArena3DBackground();
+      startNewMatch();
+      switchTab("arena");
+    });
+  </script>
+</body>
+</html>
